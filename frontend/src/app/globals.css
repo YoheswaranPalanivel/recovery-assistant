@@ -1,0 +1,130 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+/*
+  Design tokens — light, calm, one brand colour.
+  fog    #F4F6FB  page ground (cool, near white)
+  paper  #FFFFFF  cards
+  ink    #1B1F3B  text (deep navy-indigo, softer than black)
+  slate  #64748B  secondary text
+  rule   #E5E8F0  hairlines
+  brand  #5B5BD6  indigo: navigation, primary buttons, focus
+  stride #0E9F8E  teal: "goal reached" (meaning, not decoration)
+  ochre  #F2A93B  amber: "under goal"
+  alarm  #E0245E  rose: needs attention
+*/
+@theme {
+  --color-fog: #f2f7f6;
+  --color-paper: #ffffff;
+  --color-ink: #10283a;
+  --color-ink-soft: #1d4157;
+  --color-ink-deep: #0b2a3c;
+  --color-slate: #5e7080;
+  --color-rule: #dfe9e7;
+
+  --color-brand: #0f766e;
+  --color-brand-deep: #0b5f59;
+  --color-brand-soft: #e1f4ef;
+  --color-violet: #8b5cf6;
+  --color-mint: #a7f3d0;
+
+  --color-stride: #0e9f8e;
+  --color-stride-deep: #0b6f64;
+  --color-stride-pale: #d5f5ef;
+  --color-ochre: #f2a93b;
+  --color-ochre-pale: #fdf0d9;
+  --color-alarm: #e0245e;
+  --color-alarm-pale: #fde7ee;
+  --color-amber: #c2710c;
+  --color-amber-pale: #fef3e2;
+
+  --font-display: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  background: var(--color-fog);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.card {
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(16, 40, 58, 0.04), 0 12px 32px -22px rgba(12, 74, 110, 0.28);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* The one brand gradient, used for the dashboard banner and primary buttons. */
+.brand-gradient {
+  background: linear-gradient(120deg, #047857 0%, #0f766e 48%, #0c4a6e 100%);
+}
+.soft-gradient {
+  background: linear-gradient(135deg, #e3f6ef 0%, #e6f4f4 45%, #e4f0fa 100%);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Heatmap "no data" cells: hatched so missing ≠ low */
+.cell-empty {
+  background-image: repeating-linear-gradient(135deg, transparent 0 3px, rgba(27, 31, 59, 0.08) 3px 4px);
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(14, 159, 142, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgba(14, 159, 142, 0);
+  }
+}
+.pulse {
+  animation: pulse-ring 1.2s ease-out 2;
+}
+
+@keyframes toast-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.toast-in {
+  animation: toast-in 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse,
+  .toast-in {
+    animation: none;
+  }
+}
+
+.recharts-tooltip-wrapper {
+  outline: none;
+}
