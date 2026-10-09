@@ -59,9 +59,14 @@ export default function MemberPage() {
 
   return (
     <div className="flex flex-col gap-5 pt-4">
-      <Link href="/members" className="text-sm text-slate hover:text-brand">
-        ← All members
-      </Link>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+        <Link href="/members" className="text-sm text-slate hover:text-brand">
+          ← All members
+        </Link>
+        <a href={`/me/${encodeURIComponent(userId)}`} target="_blank" rel="noreferrer" className="text-sm font-semibold text-brand hover:underline">
+          📱 Open {p.name}&apos;s phone view ↗
+        </a>
+      </div>
 
       <section className="card flex flex-wrap items-center gap-5 p-6">
         <span className="flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold text-white" style={{ background: s.avatar }}>

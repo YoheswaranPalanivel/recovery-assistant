@@ -16,7 +16,9 @@ import type {
   MemberDetail,
   MemberWeek,
   CommunityView,
-  CommunitySummary
+  CommunitySummary,
+  MemberApp,
+  CheckIn
 } from "@shared/types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -72,6 +74,8 @@ export const api = {
   today: () => request<TodayView>("/api/today"),
   plan: (userId: string) => request<CarePlan>("/api/plan", json({ userId })),
   members: () => request<MemberWeek[]>("/api/members"),
+  memberApp: (userId: string) => request<MemberApp>(`/api/member-app/${encodeURIComponent(userId)}`),
+  checkIn: (b: { userId: string; mood: CheckIn["mood"]; medicineTaken: boolean | null }) => request<CheckIn>("/api/checkins", json(b)),
   community: () => request<CommunityView>("/api/community"),
   communitySummary: () => request<CommunitySummary>("/api/community/summary", { method: "POST" }),
   member: (userId: string) => request<MemberDetail>(`/api/members/${encodeURIComponent(userId)}`),

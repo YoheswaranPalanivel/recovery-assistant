@@ -26,3 +26,8 @@ export function emitStreamUpdate(p: { batches: IngestionBatch[]; newAlerts: Aler
     reset: Boolean(p.reset),
   });
 }
+
+
+export function emitChange() {
+  io?.emit("data:updated", { at: new Date().toISOString(), records: store.recordCount(), batches: [], newAlerts: [], reset: false });
+}

@@ -119,13 +119,13 @@ const ORDER: Record<MemberStatus, number> = { needs_support: 0, slipping: 1, che
 
 
 /** Every member's week, most urgent first. */
-export function allMemberWeeks(records: DailyRecord[]): MemberWeek[] {
+export function allMemberWeeks(records: DailyRecord[], adjust: (w: MemberWeek) => MemberWeek = (w) => w): MemberWeek[] {
   const { max } = dateRange(records);
   if (!max) return [];
   const byUser = groupBy(records, (r) => r.userId);
   const profiles = profilesFor([...byUser.keys()]);
   return [...byUser]
-    .map(([userId, recs]) => memberWeek(recs, profiles.get(userId)!, max))
+    .map(([userId, recs]) => adjust(memberWeek(recs, profiles.get(userId)!, max)))
     .sort((a, b) => ORDER[a.status] - ORDER[b.status] || a.profile.name.localeCompare(b.profile.name));
 }
 
@@ -164,7 +164,7 @@ export function memberDetail(recs: DailyRecord[], profile: MemberProfile, asOf: 
 
 
 /** Everything the health worker's Today page needs. */
-export function todayView(records: DailyRecord[]): TodayView {
+export function todayView(records: DailyRecord[], adjust: (w: MemberWeek) => MemberWeek = (w) => w): TodayView {
   const { max } = dateRange(records);
   const counts: TodayView["counts"] = { needs_support: 0, slipping: 0, check_device: 0, needs_rest: 0, on_track: 0 };
   if (!max) return { asOf: null, counts, priorities: [], community: { metGoalPct: 0, previousMetGoalPct: null, members: 0 } };
@@ -175,7 +175,7 @@ export function todayView(records: DailyRecord[]): TodayView {
   let metPrev = 0;
   let hadPrev = 0;
   for (const [userId, recs] of byUser) {
-    const w = memberWeek(recs, profiles.get(userId)!, max);
+    const w = adjust(memberWeek(recs, profiles.get(userId)!, max));
     weeks.push(w);
     counts[w.status]++;
     // same calculation for the week before, for the community trend

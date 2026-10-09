@@ -12,11 +12,12 @@ import { addDays, completedDays, computeHeatmap, computeKpis, computeTrend, comp
 import { detectAnomalies } from "../analytics/anomalies.js";
 import { buildContext } from "../llm/contextBuilder.js";
 import { generateInsight, llmEnabled, llmModel, llmProvider } from "../llm/llmClient.js";
-import { emitStreamUpdate, markAlertsSeen } from "../realtime.js";
+import { emitChange, emitStreamUpdate, markAlertsSeen } from "../realtime.js";
 import { memberWeek, todayView, allMemberWeeks, memberDetail } from "../programme/engine.js";
 import { generatePlan } from "../programme/planner.js";
 import { actionSummary, actionsFor, clearActions, recordAction, withActions } from "../programme/actions.js";
 import { communitySummary, communityView } from "../programme/community.js";
+import { applyCheckIn, clearCheckIns, recentCheckIn, recordCheckIn } from "../programme/checkins.js";
 import { profilesFor } from "../programme/profiles.js";
 import { dateRange as range } from "../analytics/metrics.js";import {
   SESSION_COOKIE,
@@ -126,6 +127,7 @@ api.post("/ingest", requireIngestKey, async (req, res, next) => {
 api.post("/reset-stream", requireIngestKey, (_req, res) => {
   store.reset();
   clearActions();
+  clearCheckIns();
   markAlertsSeen([], true);
   emitStreamUpdate({ batches: [], newAlerts: [], reset: true });
   store.addAudit({ user: "ingest-api", action: "reset", detail: "data cleared before replay" });
@@ -202,6 +204,7 @@ api.post("/demo/load", requireRole("admin"), async (req, res, next) => {
 api.post("/reset", requireRole("admin"), (req, res) => {
   store.reset();
   clearActions();
+  clearCheckIns();
   markAlertsSeen([], true);
   emitStreamUpdate({ batches: [], newAlerts: [], reset: true });
   store.addAudit({ user: req.user!.username, action: "reset", detail: "all data cleared" });
@@ -248,7 +251,7 @@ api.get("/overview", (req, res, next) => {
 
 api.get("/today", (_req, res) => {
   const recs = completedDays(store.allRecords());
-  const view = todayView(recs);
+  const view = todayView(recs, applyCheckIn);
   const names = new Map([...profilesFor([...new Set(recs.map((r) => r.userId))]).values()].map((p) => [p.userId, p.name]));
   res.json(withActions(view, recs, names));
 });
@@ -282,10 +285,60 @@ api.post("/actions", (req, res, next) => {
   }
 });
 
+
+
+
+/**
+ * The member's phone view. In this demo it is opened by signed-in staff to show what a member sees;
+ * a real member app would have its own sign-in and only ever see its own data.
+ */
+api.get("/member-app/:userId", (req, res, next) => {
+  try {
+    const userId = String(req.params.userId).slice(0, 64);
+    const all = completedDays(store.allRecords());
+    const recs = all.filter((r) => r.userId === userId);
+    const { max } = range(all);
+    if (!recs.length || !max) throw new IngestionError("No data for this member.");
+    const profile = profilesFor([...new Set(all.map((r) => r.userId))]).get(userId)!;
+    const d = memberDetail(recs, profile, max);
+    const sent = actionsFor(userId, recs).find((a) => a.kind === "plan_sent" && a.note);
+    res.json({
+      name: profile.name,
+      language: profile.language,
+      goals: d.member.goals,
+      week: d.member.week,
+      streak: d.streak,
+      message: sent ? { text: sent.note, from: sent.by, at: sent.at } : null,
+      todayCheckIn: recentCheckIn(userId),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+const CheckInSchema = z.object({
+  userId: z.string().min(1).max(64),
+  mood: z.enum(["good", "okay", "not_well"]),
+  medicineTaken: z.boolean().nullable().default(null),
+});
+
+/** A member's daily check-in. It updates the health worker's list straight away. */
+api.post("/checkins", (req, res, next) => {
+  try {
+    const body = CheckInSchema.parse(req.body);
+    const c = recordCheckIn(body);
+    store.addAudit({ user: req.user!.username, action: "member_checkin", detail: `${body.userId} checked in` });
+    emitChange();
+    res.json(c);
+  } catch (e) {
+    next(e);
+  }
+});
+
 /** All members, most urgent first, each with their latest contact. */
 api.get("/members", (_req, res) => {
   const recs = completedDays(store.allRecords());
-  const weeks = allMemberWeeks(recs);
+  const weeks = allMemberWeeks(recs, applyCheckIn);
   const names = new Map(weeks.map((w) => [w.profile.userId, w.profile.name]));
   const view = withActions({ asOf: null, counts: { needs_support: 0, slipping: 0, check_device: 0, needs_rest: 0, on_track: 0 }, priorities: weeks, community: { metGoalPct: 0, previousMetGoalPct: null, members: 0 } }, recs, names);
   res.json(view.priorities);
@@ -300,7 +353,8 @@ api.get("/members/:userId", (req, res, next) => {
     const { max } = range(all);
     if (!recs.length || !max) throw new IngestionError("No data for this member.");
     const profile = profilesFor([...new Set(all.map((r) => r.userId))]).get(userId)!;
-    res.json({ ...memberDetail(recs, profile, max), actions: actionsFor(userId, recs) });
+    const d = memberDetail(recs, profile, max);
+    res.json({ ...d, member: applyCheckIn(d.member), actions: actionsFor(userId, recs) });
   } catch (e) {
     next(e);
   }
@@ -432,7 +486,7 @@ api.post("/plan", insightLimiter, async (req, res, next) => {
     const { max } = range(all);
     if (!recs.length || !max) throw new IngestionError("No data for this member.");
     const profile = profilesFor([...new Set(all.map((r) => r.userId))]).get(userId)!;
-    const plan = await generatePlan(memberWeek(recs, profile, max));
+     const plan = await generatePlan(applyCheckIn(memberWeek(recs, profile, max)));
     store.addAudit({
       user: req.user!.username,
       action: "generate_plan",

@@ -225,6 +225,7 @@ export type DayDot = { date: string; level: "none" | "low" | "some" | "good" | "
 export type MemberWeek = {
   profile: MemberProfile;
   lastAction?: MemberAction | null; // the health worker's latest contact, with its outcom
+  checkIn?: CheckIn | null; // the member's check-in in the last 24 hours
   status: MemberStatus;
   reasons: string[]; // plain-language reasons, each backed by a figure
   goals: GoalProgress[];
@@ -342,4 +343,26 @@ export type CommunitySummary = {
   model: string | null;
   check: { passed: boolean; attempts: number; problems: string[] };
   context: Record<string, unknown>;
+};
+
+
+
+// ---------- Member daily check-in (member's phone view) ----------
+
+export type CheckIn = {
+  id: string;
+  userId: string;
+  at: string; // when it was sent
+  mood: "good" | "okay" | "not_well";
+  medicineTaken: boolean | null; // null = not answered
+};
+
+export type MemberApp = {
+  name: string;
+  language: "Tamil" | "English";
+  goals: GoalProgress[];
+  week: DayDot[];
+  streak: number;
+  message: { text: string; from: string; at: string } | null; // latest plan sent by the health worker
+  todayCheckIn: CheckIn | null;
 };

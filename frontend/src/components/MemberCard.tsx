@@ -111,6 +111,14 @@ export function MemberCard({ m, onChanged }: { m: MemberWeek; onChanged?: () => 
           ))}
         </ul>
 
+        {m.checkIn && (
+          <p className={`mt-2 inline-flex items-center gap-2 rounded-lg px-2.5 py-1 text-[0.82rem] font-semibold ${m.checkIn.mood === "not_well" ? "bg-alarm-pale text-alarm" : "bg-stride-pale text-stride-deep"}`}>
+            📱 Check-in {new Date(m.checkIn.at).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}:{" "}
+            {m.checkIn.mood === "good" ? "😊 feeling good" : m.checkIn.mood === "okay" ? "😐 okay" : "😟 not feeling well"}
+            {m.checkIn.medicineTaken === false ? " · missed medicine" : m.checkIn.medicineTaken ? " · medicine taken" : ""}
+          </p>
+        )}
+
         <div className="mt-3 flex items-center gap-1.5 text-[0.75rem] text-slate">
           <span className="mr-1">Last 7 days</span>
           {m.week.map((d) => (
