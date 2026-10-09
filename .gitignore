@@ -15,3 +15,4 @@ backend/data/store.json
 backend/data/store.json.tmp
 backend/data/fitbit/
 backend/data/actions.json
+backend/data/checkins.json
