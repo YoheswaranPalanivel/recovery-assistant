@@ -1,7 +1,7 @@
 import type { LlmContext } from "@shared/types";
 
 /** Every number that appears anywhere in the context (values and inside strings). */
-export function allowedNumbers(ctx: LlmContext): Set<string> {
+export function allowedNumbers(ctx: LlmContext | object): Set<string> {
   const set = new Set<string>();
   const walk = (v: unknown) => {
     if (typeof v === "number") set.add(normalise(String(v)));
@@ -34,7 +34,7 @@ export function checkWords(...texts: string[]): string[] {
  * The LLM may only repeat numbers it was given. Any other number means it
  * calculated or invented something, so the response is rejected.
  */
-export function checkNumbers(ctx: LlmContext, ...texts: string[]) {
+export function checkNumbers(ctx: LlmContext | object, ...texts: string[]) {
   const allowed = allowedNumbers(ctx);
   const unknown = [...new Set(texts.flatMap(extractNumbers))].filter((n) => !allowed.has(n));
   return { passed: unknown.length === 0, unknownNumbers: unknown };

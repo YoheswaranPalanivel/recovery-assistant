@@ -192,3 +192,132 @@ export type Insight = {
   model: string | null;
   guard: { passed: boolean; unknownNumbers: string[]; attempts: number; blockedWords?: string[] };
 };
+
+
+
+
+
+// ---------- Community diabetes programme ----------
+
+export type MemberProfile = {
+  userId: string; // pseudonym
+  name: string; // demo name: the dataset has no names
+  ageBand: "30-44" | "45-59" | "60+";
+  condition: "Type 2 diabetes" | "Pre-diabetes";
+  mobility: "normal" | "limited";
+  prefers: string; // e.g. "evening walks"
+  language: "Tamil" | "English";
+  demo: true; // profiles are sample data, clearly labelled
+};
+
+export type MemberStatus = "needs_support" | "slipping" | "check_device" | "needs_rest" | "on_track";
+
+export type GoalProgress = {
+  key: "active_minutes" | "active_days" | "sleep" | "steps";
+  label: string;
+  value: number | null; // null when the dataset has no value
+  target: number;
+  unit: string;
+};
+
+export type DayDot = { date: string; level: "none" | "low" | "some" | "good" | "great" };
+
+export type MemberWeek = {
+  profile: MemberProfile;
+  lastAction?: MemberAction | null; // the health worker's latest contact, with its outcom
+  status: MemberStatus;
+  reasons: string[]; // plain-language reasons, each backed by a figure
+  goals: GoalProgress[];
+  week: DayDot[]; // last 7 completed days
+  weekStart: string;
+  weekEnd: string;
+  metWeeklyGoal: boolean;
+};
+
+export type TodayView = {
+  asOf: string | null;
+  counts: Record<MemberStatus, number>;
+  priorities: MemberWeek[]; // everyone not on track, most urgent first
+  community: { metGoalPct: number; previousMetGoalPct: number | null; members: number };
+  actions?: ActionSummary;
+};
+
+export type Weekday = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
+
+export type PlanAction = {
+  activity: string;
+  label: string;
+  minutes: number;
+  days: Weekday[];
+  when: string;
+};
+
+export type CarePlan = {
+  userId: string;
+  createdAt: string;
+  actions: PlanAction[];
+  totalMinutes: number;
+  targetMinutes: number;
+  message: string; // to the member, for the health worker to review and send
+  workerNote: string; // one line for the health worker
+  source: "llm" | "template";
+  model: string | null;
+  check: { passed: boolean; attempts: number; problems: string[] };
+  context: Record<string, unknown>; // exactly what the AI received
+};
+
+
+// ---------- Health worker actions and "did it help?" ----------
+
+export type ActionKind = "call" | "visit" | "plan_sent" | "device_check";
+
+export type ContactAction = {
+  id: string;
+  userId: string;
+  kind: ActionKind;
+  note: string;
+  by: string; // username
+  at: string; // when it was recorded
+  dataDate: string; // latest data day at the time: "before" and "after" are measured from here
+  followUp: string | null; // YYYY-MM-DD
+};
+
+export type Outcome = {
+  status: "waiting" | "more_active" | "no_change";
+  beforeSteps: number | null; // average daily steps, 3 days before contact
+  afterSteps: number | null; // average daily steps, up to 3 days after
+  changePct: number | null;
+  daysAfter: number;
+};
+
+export type MemberAction = ContactAction & { outcome: Outcome };
+
+export type ActionSummary = {
+  contacted: number; // members contacted
+  moreActive: number;
+  noChange: number;
+  waiting: number;
+  followUps: { userId: string; name: string; kind: ActionKind; date: string }[];
+};
+
+
+
+// ---------- Member journey page ----------
+
+export type WeekSummary = {
+  weekStart: string;
+  weekEnd: string;
+  activeMinutes: number;
+  target: number;
+  met: boolean;
+  avgSteps: number | null;
+  avgSleep: number | null;
+  trackedDays: number;
+};
+
+export type MemberDetail = {
+  member: MemberWeek;
+  history: WeekSummary[]; // oldest first, up to 4 weeks
+  streak: number; // active days in a row up to the latest day
+  actions: MemberAction[]; // newest first, each with its outcome
+};

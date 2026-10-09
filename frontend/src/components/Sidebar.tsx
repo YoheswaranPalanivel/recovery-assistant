@@ -7,10 +7,12 @@ import { api, type Status } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useLive } from "@/lib/live";
 import { timeAgo } from "@/lib/format";
-import { IconDatabase, IconFlow, IconGrid, IconLogout, IconMenu, IconShield } from "./icons";
+import { IconDatabase, IconFlow, IconGrid, IconLogout, IconMenu, IconShield, IconTarget, IconUsers } from "./icons";
 
 const NAV = [
-  { href: "/", label: "Dashboard", Icon: IconGrid },
+  { href: "/", label: "Today", Icon: IconTarget },
+    { href: "/members", label: "Members", Icon: IconUsers },
+  { href: "/community", label: "Community", Icon: IconGrid },
   { href: "/data", label: "Data", Icon: IconDatabase },
   { href: "/how-it-works", label: "How it works", Icon: IconFlow },
   { href: "/security", label: "Privacy & security", Icon: IconShield },

@@ -13,7 +13,11 @@ import { detectAnomalies } from "../analytics/anomalies.js";
 import { buildContext } from "../llm/contextBuilder.js";
 import { generateInsight, llmEnabled, llmModel, llmProvider } from "../llm/llmClient.js";
 import { emitStreamUpdate, markAlertsSeen } from "../realtime.js";
-import {
+import { memberWeek, todayView, allMemberWeeks, memberDetail } from "../programme/engine.js";
+import { generatePlan } from "../programme/planner.js";
+import { actionsFor, clearActions, recordAction, withActions } from "../programme/actions.js";
+import { profilesFor } from "../programme/profiles.js";
+import { dateRange as range } from "../analytics/metrics.js";import {
   SESSION_COOKIE,
   cookieOptions,
   issueToken,
@@ -120,6 +124,7 @@ api.post("/ingest", requireIngestKey, async (req, res, next) => {
 
 api.post("/reset-stream", requireIngestKey, (_req, res) => {
   store.reset();
+  clearActions();
   markAlertsSeen([], true);
   emitStreamUpdate({ batches: [], newAlerts: [], reset: true });
   store.addAudit({ user: "ingest-api", action: "reset", detail: "data cleared before replay" });
@@ -195,6 +200,7 @@ api.post("/demo/load", requireRole("admin"), async (req, res, next) => {
 
 api.post("/reset", requireRole("admin"), (req, res) => {
   store.reset();
+  clearActions();
   markAlertsSeen([], true);
   emitStreamUpdate({ batches: [], newAlerts: [], reset: true });
   store.addAudit({ user: req.user!.username, action: "reset", detail: "all data cleared" });
@@ -234,6 +240,76 @@ api.get("/overview", (req, res, next) => {
     next(e);
   }
 });
+
+// api.get("/today", (_req, res) => {
+//   res.json(todayView(completedDays(store.allRecords())));
+// });
+
+api.get("/today", (_req, res) => {
+  const recs = completedDays(store.allRecords());
+  const view = todayView(recs);
+  const names = new Map([...profilesFor([...new Set(recs.map((r) => r.userId))]).values()].map((p) => [p.userId, p.name]));
+  res.json(withActions(view, recs, names));
+});
+
+const ActionSchema = z.object({
+  userId: z.string().min(1).max(64),
+  kind: z.enum(["call", "visit", "plan_sent", "device_check"]),
+  note: z.string().max(300).default(""),
+  followUpDays: z.number().int().min(0).max(30).nullable().default(null),
+});
+
+/** A health worker records a call, visit, plan sent or device check, with an optional follow-up. */
+api.post("/actions", (req, res, next) => {
+  try {
+    const body = ActionSchema.parse(req.body);
+    const { max } = range(completedDays(store.allRecords()));
+    if (!max) throw new IngestionError("No data loaded yet.");
+    const today = new Date().toISOString().slice(0, 10);
+    const action = recordAction({
+      userId: body.userId,
+      kind: body.kind,
+      note: body.note,
+      by: req.user!.username,
+      dataDate: max,
+      followUp: body.followUpDays === null ? null : addDays(today, body.followUpDays),
+    });
+    store.addAudit({ user: req.user!.username, action: "record_action", detail: `${body.kind} for ${body.userId}` });
+    res.json(action);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** All members, most urgent first, each with their latest contact. */
+api.get("/members", (_req, res) => {
+  const recs = completedDays(store.allRecords());
+  const weeks = allMemberWeeks(recs);
+  const names = new Map(weeks.map((w) => [w.profile.userId, w.profile.name]));
+  const view = withActions({ asOf: null, counts: { needs_support: 0, slipping: 0, check_device: 0, needs_rest: 0, on_track: 0 }, priorities: weeks, community: { metGoalPct: 0, previousMetGoalPct: null, members: 0 } }, recs, names);
+  res.json(view.priorities);
+});
+
+/** One member's journey: this week, last 4 weeks, streak and contact history with outcomes. */
+api.get("/members/:userId", (req, res, next) => {
+  try {
+    const userId = String(req.params.userId).slice(0, 64);
+    const all = completedDays(store.allRecords());
+    const recs = all.filter((r) => r.userId === userId);
+    const { max } = range(all);
+    if (!recs.length || !max) throw new IngestionError("No data for this member.");
+    const profile = profilesFor([...new Set(all.map((r) => r.userId))]).get(userId)!;
+    res.json({ ...memberDetail(recs, profile, max), actions: actionsFor(userId, recs) });
+  } catch (e) {
+    next(e);
+  }
+});
+
+api.get("/actions/:userId", (req, res) => {
+  const userId = String(req.params.userId).slice(0, 64);
+  res.json(actionsFor(userId, store.allRecords().filter((r) => r.userId === userId)));
+});
+
 
 api.get("/users", (_req, res) => {
   const all = completedDays(store.allRecords());
@@ -318,6 +394,29 @@ api.get("/insights/context", (req, res, next) => {
     next(e);
   }
 });
+
+
+/** AI weekly care plan for one member: chosen from the approved menu, checked against code limits. */
+api.post("/plan", insightLimiter, async (req, res, next) => {
+  try {
+    const { userId } = z.object({ userId: z.string().min(1).max(64) }).parse(req.body);
+    const all = completedDays(store.allRecords());
+    const recs = all.filter((r) => r.userId === userId);
+    const { max } = range(all);
+    if (!recs.length || !max) throw new IngestionError("No data for this member.");
+    const profile = profilesFor([...new Set(all.map((r) => r.userId))]).get(userId)!;
+    const plan = await generatePlan(memberWeek(recs, profile, max));
+    store.addAudit({
+      user: req.user!.username,
+      action: "generate_plan",
+      detail: `${userId}, ${plan.source === "llm" ? `AI plan accepted on attempt ${plan.check.attempts}` : "template plan used"}`,
+    });
+    res.json(plan);
+  } catch (e) {
+    next(e);
+  }
+});
+
 
 api.post("/insights", insightLimiter, async (req, res, next) => {
   try {

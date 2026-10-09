@@ -72,6 +72,7 @@ const complete: Complete | null =
       : null;
 
 export const llmEnabled = () => complete !== null;
+export const callModel = complete;
 export const llmModel = () => (complete ? cfg.model : null);
 export const llmProvider = () => (complete ? (cfg.provider === "anthropic" ? "Anthropic" : new URL(cfg.baseUrl).host) : null);
 export const llmLabel = () =>

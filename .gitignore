@@ -14,3 +14,4 @@ backend/data/.pseudonym-secret
 backend/data/store.json
 backend/data/store.json.tmp
 backend/data/fitbit/
+backend/data/actions.json

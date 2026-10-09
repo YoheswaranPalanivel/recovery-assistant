@@ -9,6 +9,12 @@ import type {
   PipelineStatus,
   SessionUser,
   UserSummary,
+  TodayView,
+  CarePlan,
+  ActionKind,
+  ContactAction,
+  MemberDetail,
+  MemberWeek
 } from "@shared/types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -61,6 +67,12 @@ export const api = {
   me: () => request<{ user: SessionUser }>("/api/auth/me"),
 
   status: () => request<Status>("/api/status"),
+  today: () => request<TodayView>("/api/today"),
+  plan: (userId: string) => request<CarePlan>("/api/plan", json({ userId })),
+  members: () => request<MemberWeek[]>("/api/members"),
+  member: (userId: string) => request<MemberDetail>(`/api/members/${encodeURIComponent(userId)}`),
+  recordAction: (b: { userId: string; kind: ActionKind; note?: string; followUpDays: number | null }) =>
+  request<ContactAction>("/api/actions", json(b)),
   overview: (f: Filters) => request<Overview>(`/api/overview${qs(f)}`),
   users: () => request<UserSummary[]>("/api/users"),
   ingestion: () => request<IngestionStatus>("/api/ingestion"),

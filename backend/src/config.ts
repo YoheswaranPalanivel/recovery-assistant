@@ -88,6 +88,22 @@ export const config = {
   targetSteps: num(process.env.TARGET_STEPS, 8000),
   excludeLatestDay: (process.env.EXCLUDE_LATEST_DAY ?? "true").toLowerCase() !== "false",
 
+
+
+    /**
+   * Community diabetes programme goals. Weekly targets build gradually from each
+   * member's own level towards the programme goal, so nobody starts at a goal they can't reach.
+   */
+  programme: {
+    weeklyActiveGoal: 150, // minutes of moderate-to-vigorous activity per week
+    activeDayMinutes: 20, // a day counts as "active" at this many active minutes
+    activeDaysGoal: 5, // active days per week (4 for limited mobility)
+    sleepGoalHours: 7,
+    weeklyIncrease: 0.1, // next week's target = usual level + 10%, capped at the goal
+    minWeeklyTarget: 60, // never set a target below this
+    limitedMobilityCap: 120, // gentler weekly cap for limited mobility
+  },
+
   /**
    * Rule thresholds. Kept in one place so every alert can be explained:
    * "this fired because X was below Y".
