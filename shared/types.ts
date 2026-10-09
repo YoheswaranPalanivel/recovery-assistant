@@ -321,3 +321,25 @@ export type MemberDetail = {
   streak: number; // active days in a row up to the latest day
   actions: MemberAction[]; // newest first, each with its outcome
 };
+
+
+// ---------- Community view (programme lead) ----------
+
+export type CommunityWeek = { weekStart: string; weekEnd: string; members: number; metGoalPct: number };
+
+export type CommunityView = {
+  asOf: string | null;
+  members: number;
+  counts: Record<MemberStatus, number>;
+  weeks: CommunityWeek[]; // oldest first, up to 4
+  goals: { key: GoalProgress["key"]; label: string; metPct: number; members: number }[];
+  actions: ActionSummary;
+};
+
+export type CommunitySummary = {
+  text: string;
+  source: "llm" | "template";
+  model: string | null;
+  check: { passed: boolean; attempts: number; problems: string[] };
+  context: Record<string, unknown>;
+};

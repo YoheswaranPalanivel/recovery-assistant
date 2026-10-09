@@ -1,164 +1,180 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import type { Overview, UserSummary } from "@shared/types";
-import { api, type Filters as F, type Status } from "@/lib/api";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import type { CommunitySummary, CommunityView, MemberStatus } from "@shared/types";
+import { api } from "@/lib/api";
 import { useLive } from "@/lib/live";
-import { useAuth } from "@/lib/auth";
-import { IconBell, IconSparkle, IconTarget, IconUsers } from "@/components/icons";
-import { userLabel } from "@/lib/format";
-import { Filters } from "@/components/Filters";
-import { KpiLedger } from "@/components/KpiLedger";
-import { AdherenceHeatmap } from "@/components/AdherenceHeatmap";
-import { StepsTrend, ComplianceSleep } from "@/components/Charts";
-import { AlertList } from "@/components/AlertList";
-import { InsightPanel } from "@/components/InsightPanel";
-import { LiveToasts } from "@/components/LiveToasts";
-import { EmptyState } from "@/components/EmptyState";
+import { STATUS } from "@/components/MemberCard";
+import { IconSparkle } from "@/components/icons";
 
+const ORDER: MemberStatus[] = ["needs_support", "slipping", "check_device", "needs_rest", "on_track"];
+const fmt = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+
+/** The programme lead's view: is the community improving, where to focus, did contact help. */
 export default function CommunityPage() {
-  const { version, connected } = useLive();
-  const { user } = useAuth();
-  const [filters, setFilters] = useState<F>({});
-  const [overview, setOverview] = useState<Overview | null>(null);
-  const [users, setUsers] = useState<UserSummary[]>([]);
-  const [health, setHealth] = useState<Status | null>(null);
-  const [reload, setReload] = useState(0);
+  const { version } = useLive();
+  const [v, setV] = useState<CommunityView | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<CommunitySummary | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    Promise.all([api.overview(filters), api.users(), api.status()])
-      .then(([o, u, h]) => {
-        if (cancelled) return;
-        setOverview(o);
-        setUsers(u);
-        setHealth(h);
-        setError(null);
-      })
-      .catch((e) => !cancelled && setError(e.message))
-      .finally(() => !cancelled && setLoading(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [filters, version, reload]);
+    api.community().then(setV).catch((e) => setError(e.message));
+  }, [version]);
 
-  const selectUser = useCallback((userId: string | undefined) => {
-    setFilters((f) => ({ ...f, userId }));
-    if (userId) document.getElementById("insight")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, []);
+  const write = async () => {
+    setBusy(true);
+    try {
+      setSummary(await api.communitySummary());
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
-  if (error && !overview) {
-    return (
-      <div className="mt-10 rounded-xl border border-alarm/30 bg-alarm-pale p-6">
-        <p className="font-bold text-alarm">The dashboard can't load data.</p>
-        <p className="mt-1 text-sm">{error}</p>
-      </div>
-    );
-  }
-  if (loading || !overview) return <Skeleton />;
-  if (overview.dateRange.max === null) return <EmptyState onLoaded={() => setReload((n) => n + 1)} />;
+  if (error && !v) return <p className="mt-10 text-alarm">{error}</p>;
+  if (!v) return <p className="mt-10 text-slate">Loading the community view…</p>;
+  if (!v.asOf) return <p className="mt-10 text-slate">No data yet. Load the dataset from the Today page.</p>;
 
-  const k = overview.kpis;
-  const scope = filters.userId ? `Showing ${userLabel(filters.userId)}` : `Showing everyone`;
+  const last = v.weeks.at(-1);
+  const prev = v.weeks.at(-2);
+  const change = last && prev ? last.metGoalPct - prev.metGoalPct : null;
+  const total = ORDER.reduce((t, k) => t + v.counts[k], 0) || 1;
+  const a = v.actions;
 
   return (
-    <div className="flex flex-col gap-5 pt-6">
-      <Banner
-        name={user?.username ?? ""}
-        live={connected}
-        needHelp={users.filter((u) => u.openAlerts > 0).length}
-        attention={overview.alerts.filter((a) => a.severity === "attention").length}
-        lowGoal={overview.heatmap.filter((r) => r.compliancePct < 30).length}
-      />
-      <div className="card px-5 py-4">
-        <Filters value={filters} onChange={setFilters} users={users} range={overview.dateRange} />
-      </div>
-      {error && <p className="text-sm text-alarm">{error}</p>}
-
-      <KpiLedger k={k} trend={overview.trend} scopeLabel={scope} />
-
-      <AdherenceHeatmap rows={overview.heatmap} target={k.target} selected={filters.userId} onSelect={selectUser} />
-
-      <div className="grid gap-5 xl:grid-cols-[1fr_400px]">
-        <div className="flex min-w-0 flex-col gap-5">
-          <StepsTrend data={overview.trend} target={k.target} />
-          <ComplianceSleep data={overview.trend} hasSleep={k.avgSleepHours !== null} single={Boolean(filters.userId)} />
-        </div>
-        <AlertList alerts={overview.alerts} onSelectUser={selectUser} selectedUser={filters.userId} />
-      </div>
-
-      <div id="insight" className="scroll-mt-24">
-        <InsightPanel filters={filters} dataVersion={version} llmModel={health?.llm ? health.model : null} />
-      </div>
-
-      <LiveToasts onSelectUser={selectUser} />
-    </div>
-  );
-}
-
-function Skeleton() {
-  return (
-    <div className="flex animate-pulse flex-col gap-5 pt-6 motion-reduce:animate-none" aria-busy="true" aria-label="Loading dashboard">
-      <div className="h-12 w-80 rounded bg-rule/60" />
-      <div className="h-36 rounded-xl bg-rule/50" />
-      <div className="h-96 rounded-xl bg-rule/40" />
-    </div>
-  );
-}
-
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-}
-
-/** The page's one bold moment: a gradient summary of the selection in plain words. */
-function Banner(p: { name: string; live: boolean; needHelp: number; attention: number; lowGoal: number }) {
-  const stats = [
-    { Icon: IconUsers, label: "People needing attention this week", value: p.needHelp.toLocaleString("en-IN") },
-    { Icon: IconBell, label: "Serious alerts in this view", value: p.attention.toLocaleString("en-IN") },
-    { Icon: IconTarget, label: "People under 30% of goal days", value: p.lowGoal.toLocaleString("en-IN") },
-  ];
-  return (
-    <section className="brand-gradient relative overflow-hidden rounded-[22px] px-7 py-7 text-white shadow-[0_24px_60px_-30px_rgba(79,70,229,0.75)] sm:px-9">
-      <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-white/10 blur-2xl" aria-hidden />
-      <div className="pointer-events-none absolute -bottom-28 left-1/3 h-72 w-72 rounded-full bg-white/10 blur-3xl" aria-hidden />
-      <div className="relative flex flex-wrap items-end justify-between gap-6">
-        <div className="max-w-[40rem]">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[0.8rem] font-semibold backdrop-blur">
-            <span className={`h-2 w-2 rounded-full ${p.live ? "bg-[#A7F3D0]" : "bg-white/50"}`} />
-            {p.live ? "Live data" : "Offline"}
-          </span>
-          <h1 className="display mt-3 text-[2.1rem] font-extrabold leading-tight sm:text-[2.5rem]">
-            {greeting()}
-            {p.name ? `, ${p.name}` : ""}
-          </h1>
-          <p className="mt-1.5 text-[1.02rem] text-white/85">
-            Here is who is reaching their step goal, what has changed, and who may need a friendly message.
+    <div className="flex flex-col gap-5 pt-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="display text-[2rem] font-extrabold leading-tight">Community overview</h1>
+          <p className="mt-1 text-slate">
+            For the programme lead: is the community improving, where should health workers focus, and is contact helping?
           </p>
         </div>
-        <a
-          href="#insight"
-          className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[0.95rem] font-bold text-brand-deep shadow-sm transition hover:bg-white/90"
-        >
-          <IconSparkle className="h-4 w-4" />
-          Write a message with AI
-        </a>
+        <Link href="/community/details" className="text-sm font-semibold text-brand hover:underline">
+          Detailed activity data →
+        </Link>
       </div>
-      <dl className="relative mt-6 grid gap-3 sm:grid-cols-3">
-        {stats.map(({ Icon, label, value }) => (
-          <div key={label} className="flex items-center gap-3 rounded-2xl bg-white/12 px-4 py-3 backdrop-blur" style={{ background: "rgba(255,255,255,0.12)" }}>
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
-              <Icon className="h-5 w-5" />
-            </span>
-            <div>
-              <dt className="text-[0.8rem] text-white/80">{label}</dt>
-              <dd className="num text-[1.5rem] font-extrabold leading-tight">{value}</dd>
-            </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="card px-5 py-4">
+          <p className="text-[0.82rem] text-slate">Members</p>
+          <p className="display num text-[2rem] font-extrabold">{v.members}</p>
+        </div>
+        <div className="card px-5 py-4">
+          <p className="text-[0.82rem] text-slate">Met their weekly goal</p>
+          <p className="display num text-[2rem] font-extrabold">{last?.metGoalPct ?? 0}%</p>
+          {change !== null && (
+            <p className={`text-[0.8rem] font-bold ${change >= 0 ? "text-stride" : "text-alarm"}`}>
+              {change >= 0 ? "▲" : "▼"} {Math.abs(change)} points vs last week
+            </p>
+          )}
+        </div>
+        <div className="card px-5 py-4">
+          <p className="text-[0.82rem] text-slate">Need a health worker</p>
+          <p className="display num text-[2rem] font-extrabold">{v.counts.needs_support + v.counts.slipping}</p>
+          <p className="text-[0.8rem] text-slate">+ {v.counts.check_device} device checks</p>
+        </div>
+        <div className="card px-5 py-4">
+          <p className="text-[0.82rem] text-slate">More active after contact</p>
+          <p className="display num text-[2rem] font-extrabold">
+            {a.moreActive}
+            <span className="text-[1rem] text-slate"> of {a.contacted}</span>
+          </p>
+          <p className="text-[0.8rem] text-slate">{a.waiting} waiting for data</p>
+        </div>
+      </div>
+
+      <section className="card p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="display text-[1.15rem] font-extrabold">This week&apos;s summary</h2>
+            <p className="text-[0.84rem] text-slate">Written by AI from the figures on this page, then checked: every number must match.</p>
           </div>
-        ))}
-      </dl>
-    </section>
+          <button
+            type="button"
+            onClick={write}
+            disabled={busy}
+            className="brand-gradient flex items-center gap-2 rounded-xl px-4 py-2 text-[0.88rem] font-bold text-white disabled:opacity-60"
+          >
+            <IconSparkle className="h-4 w-4" />
+            {busy ? "Writing…" : summary ? "Write again" : "Write this week's summary"}
+          </button>
+        </div>
+        {summary && (
+          <div className="mt-4 rounded-xl bg-[linear-gradient(135deg,#E3F6EF,#E4F0FA)] px-4 py-3">
+            <p className="text-[1rem] leading-relaxed">{summary.text}</p>
+            <p className="mt-2 text-[0.75rem] font-semibold text-brand">
+              {summary.source === "llm"
+                ? `✓ Written by ${summary.model}, every number matches${summary.check.attempts > 1 ? ` (attempt ${summary.check.attempts})` : ""}`
+                : "Safe template summary"}
+            </p>
+          </div>
+        )}
+      </section>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <section className="card p-5">
+          <h2 className="display text-[1.15rem] font-extrabold">Members meeting their goal, week by week</h2>
+          <p className="text-[0.84rem] text-slate">Each member against their own weekly goal.</p>
+          <div className="mt-5 grid h-44 items-end gap-4" style={{ gridTemplateColumns: `repeat(${v.weeks.length}, minmax(0, 1fr))` }}>
+            {v.weeks.map((w, i) => (
+              <div key={w.weekEnd} className="flex h-full flex-col justify-end text-center">
+                <div className="flex flex-1 items-end justify-center">
+                  <div
+                    className="w-full max-w-[64px] rounded-t-lg"
+                    style={{ height: `${Math.max(3, w.metGoalPct)}%`, background: i === v.weeks.length - 1 ? "#0F766E" : "#7FD6C6" }}
+                  />
+                </div>
+                <p className="num mt-2 font-bold">{w.metGoalPct}%</p>
+                <p className="text-[0.72rem] text-slate">
+                  {fmt(w.weekStart)} – {fmt(w.weekEnd)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="card p-5">
+          <h2 className="display text-[1.15rem] font-extrabold">Where people are this week</h2>
+          <div className="mt-4 flex h-5 overflow-hidden rounded-full" role="img" aria-label="Members by status">
+            {ORDER.map((k) => (
+              <span key={k} style={{ width: `${(v.counts[k] / total) * 100}%`, background: STATUS[k].avatar }} />
+            ))}
+          </div>
+          <ul className="mt-4 space-y-2 text-[0.9rem]">
+            {ORDER.map((k) => (
+              <li key={k} className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-sm" style={{ background: STATUS[k].avatar }} />
+                <span className="flex-1">{STATUS[k].label}</span>
+                <b className="num">{v.counts[k]}</b>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <section className="card p-5">
+        <h2 className="display text-[1.15rem] font-extrabold">Programme goals this week</h2>
+        <p className="text-[0.84rem] text-slate">Share of members meeting each goal (members with data for that goal; device checks left out).</p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {v.goals.map((g) => (
+            <div key={g.key}>
+              <div className="mb-1.5 flex justify-between text-[0.9rem]">
+                <span>{g.label}</span>
+                <span className="num font-bold">
+                  {g.metPct}% <span className="font-normal text-slate">of {g.members}</span>
+                </span>
+              </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-[#EEF3F2]">
+                <div className="h-full rounded-full" style={{ width: `${g.metPct}%`, background: g.metPct >= 70 ? "#0E9F8E" : g.metPct >= 40 ? "#F2A93B" : "#E8892B" }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }

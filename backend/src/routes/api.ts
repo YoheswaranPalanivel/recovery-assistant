@@ -15,7 +15,8 @@ import { generateInsight, llmEnabled, llmModel, llmProvider } from "../llm/llmCl
 import { emitStreamUpdate, markAlertsSeen } from "../realtime.js";
 import { memberWeek, todayView, allMemberWeeks, memberDetail } from "../programme/engine.js";
 import { generatePlan } from "../programme/planner.js";
-import { actionsFor, clearActions, recordAction, withActions } from "../programme/actions.js";
+import { actionSummary, actionsFor, clearActions, recordAction, withActions } from "../programme/actions.js";
+import { communitySummary, communityView } from "../programme/community.js";
 import { profilesFor } from "../programme/profiles.js";
 import { dateRange as range } from "../analytics/metrics.js";import {
   SESSION_COOKIE,
@@ -390,6 +391,32 @@ api.get("/insights/context", (req, res, next) => {
     const ctx = buildContext(completedDays(store.allRecords()), f.userId, f);
     if (!ctx) throw new IngestionError("No data for this person in the selected period.");
     res.json(ctx);
+  } catch (e) {
+    next(e);
+  }
+});
+
+
+
+function community() {
+  const recs = completedDays(store.allRecords());
+  const names = new Map([...profilesFor([...new Set(recs.map((r) => r.userId))]).values()].map((p) => [p.userId, p.name]));
+  return communityView(recs, actionSummary(recs, names));
+}
+
+/** Programme lead's view: the community week by week. */
+api.get("/community", (_req, res) => {
+  res.json(community());
+});
+
+/** AI weekly summary for the programme lead, checked before it's shown. */
+api.post("/community/summary", insightLimiter, async (req, res, next) => {
+  try {
+    const v = community();
+    if (!v.asOf) throw new IngestionError("No data loaded yet.");
+    const s = await communitySummary(v);
+    store.addAudit({ user: req.user!.username, action: "community_summary", detail: s.source === "llm" ? `AI summary accepted on attempt ${s.check.attempts}` : "template summary used" });
+    res.json(s);
   } catch (e) {
     next(e);
   }

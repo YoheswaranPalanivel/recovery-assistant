@@ -26,9 +26,9 @@ const HEAT = [
 const SHADE = ["#F08A3C", "#F7B955", "#FBE2B0", "#A7F3D0", "#34D399"];
 
 const TRUST = [
-  { Icon: IconLock, text: "Hashed passwords" },
-  { Icon: IconShield, text: "No real IDs stored" },
-  { Icon: IconSparkle, text: "AI numbers checked" },
+  { Icon: IconShield, text: "No names sent to AI" },
+  { Icon: IconSparkle, text: "Every AI plan checked" },
+  { Icon: IconLock, text: "Sign-in and roles" },
 ];
 
 export default function LoginPage() {
@@ -88,20 +88,20 @@ export default function LoginPage() {
         <div className="relative my-auto">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-semibold text-white/90 backdrop-blur">
             <IconSparkle className="h-4 w-4 text-[#A7F3D0]" />
-            AI-assisted wearable analytics
+            Community diabetes programme
           </span>
           <h1 className="display mt-5 max-w-[24ch] text-[2.7rem] font-extrabold leading-[1.08] xl:text-[3.2rem] [@media(max-height:820px)]:text-[2.4rem]">
-            Steps and sleep, turned into <span className="text-[#A7F3D0]">helpful messages.</span>
+            Healthy habits, kept up. <span className="text-[#A7F3D0]">Help before people slip.</span>
           </h1>
           <p className="mt-4 max-w-[48ch] text-[1.1rem] leading-relaxed text-white/75">
-            See who is on track, spot drops early, and send a friendly message written by AI from numbers the app has checked.
+            Shows health workers who needs them today and why, sets goals that start from each person&apos;s own level, and suggests a safe weekly plan written by AI and checked by the app.
           </p>
 
           {/* product preview: three glass cards in a row, no gaps to fill */}
           <div className="mt-8 grid max-w-[820px] grid-cols-[1.35fr_1fr] gap-4 [@media(max-height:820px)]:mt-6" aria-hidden>
             <div className="row-span-2 rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur-md">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-bold">Today's overview</p>
+                <p className="text-sm font-bold">Today&apos;s list</p>
                 <span className="flex items-center gap-1.5 rounded-full bg-[#A7F3D0]/20 px-2.5 py-0.5 text-[0.7rem] font-bold text-[#D1FAE5]">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#A7F3D0] motion-reduce:animate-none" />
                   Live
@@ -109,9 +109,9 @@ export default function LoginPage() {
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {[
-                  { Icon: IconUsers, label: "People", value: "40" },
-                  { Icon: IconTarget, label: "Goal days", value: "47%" },
-                  { Icon: IconBell, label: "Alerts", value: "6" },
+                  { Icon: IconBell, label: "Need support", value: "1" },
+                  { Icon: IconTarget, label: "Slipping", value: "3" },
+                  { Icon: IconUsers, label: "On track", value: "20" },
                 ].map(({ Icon, label, value }) => (
                   <div key={label} className="rounded-2xl bg-white/10 px-3 py-2.5">
                     <Icon className="h-4 w-4 text-[#D1FAE5]" />
@@ -120,11 +120,11 @@ export default function LoginPage() {
                   </div>
                 ))}
               </div>
-              <p className="mt-4 text-[0.75rem] font-semibold text-white/65">Step goal, person by person</p>
+              <p className="mt-4 text-[0.75rem] font-semibold text-white/65">Recent days, member by member</p>
               <div className="mt-2 space-y-1.5">
                 {HEAT.map((row, r) => (
                   <div key={r} className="flex items-center gap-1.5">
-                    <span className="w-12 font-mono text-[0.68rem] text-white/55">P-{["3f2a", "9c41", "b07e", "51d8"].at(r)}</span>
+                    <span className="w-14 text-[0.7rem] text-white/60">{["Deepa", "Arjun", "Pooja", "Revathi"].at(r)}</span>
                     {row.map((v, c) => (
                       <span key={c} className="h-4 flex-1 rounded-[5px]" style={{ background: SHADE.at(v) }} />
                     ))}
@@ -136,10 +136,10 @@ export default function LoginPage() {
             <div className="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur-md">
               <div className="flex items-center gap-2 text-[0.75rem] text-white/70">
                 <IconSteps className="h-4 w-4 text-[#D1FAE5]" />
-                Avg steps
+                Met their weekly goal
               </div>
-              <p className="num mt-1 text-2xl font-extrabold">8,208</p>
-              <p className="text-[0.72rem] font-bold text-[#A7F3D0]">▲ 12% this week</p>
+              <p className="num mt-1 text-2xl font-extrabold">62%</p>
+              <p className="text-[0.72rem] font-bold text-[#A7F3D0]">▲ 3 points this week</p>
               <svg viewBox="0 0 120 32" className="mt-2 h-8 w-full">
                 <defs>
                   <linearGradient id="login-spark" x1="0" x2="0" y1="0" y2="1">
@@ -157,10 +157,10 @@ export default function LoginPage() {
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#059669] to-[#0369A1] text-white">
                   <IconSparkle className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-[0.75rem] font-bold">AI message</span>
+                <span className="text-[0.75rem] font-bold">This week&apos;s plan</span>
               </div>
-              <p className="mt-2 text-[0.84rem] leading-snug">You are moving more than last week. Keep it going today!</p>
-              <p className="mt-2 text-[0.7rem] font-bold text-[#047857]">✓ Numbers checked</p>
+              <p className="mt-2 text-[0.84rem] leading-snug">Walk after a meal, 15 min, Mon Wed Fri. Stretching, 10 min, Tue Thu.</p>
+              <p className="mt-2 text-[0.7rem] font-bold text-[#047857]">✓ Inside limits, checked by the app</p>
             </div>
           </div>
         </div>
@@ -194,7 +194,7 @@ export default function LoginPage() {
 
         <div className="mx-auto my-auto w-full max-w-[460px] py-8">
           <h2 className="display text-[2.4rem] font-extrabold leading-tight">Welcome back</h2>
-          <p className="mt-1.5 text-[1.05rem] text-slate">Sign in to see your dashboard.</p>
+          <p className="mt-1.5 text-[1.05rem] text-slate">Sign in to see who needs you today.</p>
 
           <form onSubmit={submit} className="mt-8 space-y-5" noValidate>
             <div>
@@ -269,12 +269,12 @@ export default function LoginPage() {
             </div>
             <div className="rounded-2xl border border-[#D6E4E1] bg-white p-4">
               <span className="rounded-md bg-[#E0F2FE] px-2 py-0.5 text-[0.72rem] font-bold text-[#0369A1]">ANALYST</span>
-              <p className="mt-2 text-[0.88rem] leading-snug text-slate">Views the dashboard and writes messages.</p>
+              <p className="mt-2 text-[0.88rem] leading-snug text-slate">Health worker view: members, plans and follow-ups.</p>
             </div>
           </div>
         </div>
 
-        <p className="text-center text-[0.82rem] text-slate">After 10 wrong tries, sign-in pauses for 15 minutes.</p>
+        <p className="text-center text-[0.82rem] text-slate">Activity and sleep are real Fitbit data; member profiles are demo data. After 10 wrong tries, sign-in pauses for 15 minutes.</p>
       </section>
     </div>
   );

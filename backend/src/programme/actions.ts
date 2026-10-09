@@ -64,6 +64,11 @@ export function actionsFor(userId: string, recs: DailyRecord[]): MemberAction[] 
   return actions.filter((a) => a.userId === userId).map((a) => ({ ...a, outcome: outcomeOf(a, recs) }));
 }
 
+/** Overall "did it help?" across all members' latest contacts. */
+export function actionSummary(records: DailyRecord[], names: Map<string, string>): ActionSummary {
+  return withActions({ asOf: null, counts: { needs_support: 0, slipping: 0, check_device: 0, needs_rest: 0, on_track: 0 }, priorities: [], community: { metGoalPct: 0, previousMetGoalPct: null, members: 0 } }, records, names).actions!;
+}
+
 /** Adds each member's latest contact and an overall "did it help?" summary to the Today view. */
 export function withActions(view: TodayView, records: DailyRecord[], names: Map<string, string>): TodayView {
   const byUser = new Map<string, DailyRecord[]>();

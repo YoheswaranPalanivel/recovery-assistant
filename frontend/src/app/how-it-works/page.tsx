@@ -19,7 +19,6 @@ export default function HowItWorks() {
   if (error) return <p className="mt-10 text-alarm">{error}</p>;
   if (!p) return <p className="mt-10 text-slate">Loading…</p>;
 
-  const r = p.rules;
   const steps: { title: string; what: ReactNode; figures: [string, string][]; extra?: ReactNode }[] = [
     {
       title: "Receive",
@@ -63,11 +62,12 @@ export default function HowItWorks() {
       figures: [["People, as pseudonyms", int(p.users)]],
     },
     {
-      title: "Calculate",
+      title: "Set personal goals",
       what: (
         <>
-          Plain code computes the figures: averages, daily trend with a 7-day rolling average, change against the previous period, and days on
-          target = days with at least {int(p.targetSteps)} steps ÷ days tracked × 100. The same input always gives the same answer.
+          The programme goals are 150 active minutes a week, active on 5 days, 7 hours of sleep and a personal step goal. Nobody starts at 150:
+          each member&apos;s weekly target is their usual level plus 10%, rising gently each week, with a lower cap for limited mobility.
+          Walking counts too: meeting the personal step goal keeps someone on track.
         </>
       ),
       figures: [
@@ -76,68 +76,57 @@ export default function HowItWorks() {
       ],
     },
     {
-      title: "Detect",
+      title: "Find who needs help",
       what: (
         <>
-          Four written rules compare each day with that person’s own previous {r.baselineDays} days (once at least {r.minBaselineDays} exist):
-          steps {r.activityDropPct}% or more below their baseline; sleep {r.sleepDropHours} h below their usual or under {r.minSleepHours} h; the
-          target missed {r.missedTargetStreak} days running; a recovery score {r.recoveryDropPoints} points down, if the dataset has one. Every
-          alert carries the values that triggered it.
+          Plain rules give every member a status, with the figures behind it: no data for 3 days means check the device, not a health problem;
+          3 days with almost no activity means needs support; well behind their weekly goal means slipping; a very active day after a very
+          short night means needs rest. Anyone who met their goal is never flagged. The incomplete latest day is left out.
         </>
       ),
-      figures: [
-        ["Alerts", int(p.alerts)],
-        ["Needing attention", int(p.attentionAlerts)],
-      ],
+      figures: [["Members", int(p.users)]],
+      extra: (
+        <Link href="/" className="text-sm text-stride underline-offset-4 hover:underline">
+          See today&apos;s list
+        </Link>
+      ),
     },
     {
-      title: "Summarise for the AI",
+      title: "Plan with AI, inside limits",
       what: (
         <>
-          For one person and period, the app builds a small summary from the figures above and decides the kind of message by rule (reminder,
-          encouragement, progress update, attention alert). No rows, no dates per day, no id: not even the pseudonym.
+          For one member, the AI ({p.llm.enabled ? `${p.llm.model} via ${p.llm.provider}` : "none configured, so a safe template is used"})
+          receives about a dozen calculated figures, an age band, mobility, preferred time and the approved activity menu. No name and no id.
+          It proposes a weekly plan and a short message. The code then checks every activity, every session length, the weekly total, every
+          number and certain words. If anything fails, the AI is told what and asked again, up to three times, then a safe template plan is
+          used.
         </>
       ),
       figures: [],
-      extra: p.exampleContext ? (
-        <div className="mt-1">
-          <p className="mb-1.5 text-sm text-slate">This is everything the model receives for one person, live from the current data:</p>
-          <pre className="num max-h-72 overflow-auto rounded-xl bg-ink-deep px-4 py-3 text-[0.8rem] leading-relaxed text-[#C7D2FE]">
-            {JSON.stringify(p.exampleContext, null, 2)}
-          </pre>
-        </div>
-      ) : (
-        <p className="text-sm text-slate">Load data to see a live example.</p>
-      ),
     },
     {
-      title: "Write and verify",
+      title: "Act and follow up",
       what: (
         <>
-          The model ({p.llm.enabled ? `${p.llm.model} via ${p.llm.provider}` : "none configured, so a fixed template is used"}) writes a short
-          insight and a message. Before anything is shown, the app checks that every number in the text is one it was given. If the model
-          calculated or invented a number, the answer is rejected and it is asked again, up to three times; after that the app uses its own
-          template. The API key stays on the server.
+          The health worker decides: a call, a visit, or sending the plan, with a follow-up date. The app then compares the member&apos;s daily
+          steps in the 3 days after contact with the 3 days before, so everyone can see whether reaching out helped.
         </>
       ),
-      figures: [
-        ["Messages written", int(p.insights)],
-        ["Written by the model", int(p.insightsByLlm)],
-        ["Needed a retry or fallback", int(p.guardRejections)],
-      ],
+      figures: [],
     },
     {
-      title: "Show",
+      title: "See the community",
       what: (
         <>
-          The dashboard reads the results through the signed-in API. A WebSocket, which also needs the session, tells it when new data lands, so
-          it refreshes without reloading and new alerts appear as they happen.
+          The programme lead sees the share of members meeting their goal week by week, where people are, how each goal is going and how many
+          became more active after contact. The AI writes a short weekly summary from those figures, checked the same way. Everything updates
+          live as data arrives.
         </>
       ),
       figures: [],
       extra: (
-        <Link href="/" className="text-sm text-stride underline-offset-4 hover:underline">
-          Open the dashboard
+        <Link href="/community" className="text-sm text-stride underline-offset-4 hover:underline">
+          Open the community view
         </Link>
       ),
     },
@@ -147,8 +136,8 @@ export default function HowItWorks() {
     <div className="pt-6">
       <h1 className="display text-[2.4rem] font-bold leading-none sm:text-[2.9rem]">How it works</h1>
       <p className="mt-3 max-w-[70ch] text-slate">
-        From a raw file to a message someone could receive, in eight steps. The figures on the right are live and update as data arrives. The
-        rule throughout: code produces the numbers, the AI only puts them into words.
+        From a wearable&apos;s daily data to a health worker&apos;s next action, in eight steps. The figures on the right are live. The rule
+        throughout: code produces the numbers and decisions, the AI suggests the words and plans, and the app checks them.
       </p>
 
       <ol className="mt-8 card">
