@@ -165,7 +165,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <ul className="relative grid grid-cols-3 gap-6 border-t border-white/15 pt-6">
+        <ul className="relative grid grid-cols-3 gap-6 border-t border-white/15 pt-6 [@media(max-height:800px)]:hidden">
           {TRUST.map(({ Icon, text }) => (
             <li key={text} className="flex items-center gap-3 text-[0.92rem] font-semibold text-white/85">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#A7F3D0]">

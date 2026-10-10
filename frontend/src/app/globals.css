@@ -19,7 +19,7 @@
   --color-ink: #10283a;
   --color-ink-soft: #1d4157;
   --color-ink-deep: #0b2a3c;
-  --color-slate: #5e7080;
+  --color-slate: #475967;
   --color-rule: #dfe9e7;
 
   --color-brand: #0f766e;
@@ -47,6 +47,7 @@
 }
 
 html {
+  font-size: 17px;
   background: var(--color-fog);
   color: var(--color-ink);
   font-family: var(--font-sans);
