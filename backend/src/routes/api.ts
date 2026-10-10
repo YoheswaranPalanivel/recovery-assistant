@@ -18,6 +18,7 @@ import { generatePlan } from "../programme/planner.js";
 import { actionSummary, actionsFor, clearActions, recordAction, withActions } from "../programme/actions.js";
 import { communitySummary, communityView } from "../programme/community.js";
 import { applyCheckIn, clearCheckIns, recentCheckIn, recordCheckIn } from "../programme/checkins.js";
+import { eraseMember } from "../programme/erasure.js";
 import { profilesFor } from "../programme/profiles.js";
 import { dateRange as range } from "../analytics/metrics.js";import {
   SESSION_COOKIE,
@@ -334,6 +335,24 @@ api.post("/checkins", (req, res, next) => {
     next(e);
   }
 });
+
+
+/**
+ * Right to erasure: delete everything about one member and stop it being imported again.
+ * Admin only. The activity log records that it happened, without any of the deleted data.
+ */
+api.delete("/members/:userId", requireRole("admin"), (req, res) => {
+  const userId = String(req.params.userId).slice(0, 64);
+  const removed = eraseMember(userId);
+  store.addAudit({
+    user: req.user!.username,
+    action: "delete_member",
+    detail: `${userId}: ${removed.records} daily records, ${removed.contacts} contacts, ${removed.checkIns} check-ins and ${removed.insights} messages deleted`,
+  });
+  emitChange();
+  res.json({ ok: true, removed });
+});
+
 
 /** All members, most urgent first, each with their latest contact. */
 api.get("/members", (_req, res) => {

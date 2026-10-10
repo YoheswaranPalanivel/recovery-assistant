@@ -30,6 +30,15 @@ export function recordCheckIn(c: Omit<CheckIn, "id" | "at">): CheckIn {
   return item;
 }
 
+/** Removes every check-in from one member. Returns how many were removed. */
+export function deleteCheckInsFor(userId: string): number {
+  const before = checkIns.length;
+  checkIns = checkIns.filter((c) => c.userId !== userId);
+  save();
+  return before - checkIns.length;
+}
+
+
 export function clearCheckIns() {
   checkIns = [];
   save();

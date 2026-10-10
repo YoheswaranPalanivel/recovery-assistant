@@ -152,6 +152,20 @@ export const store = {
   },
   audit: () => audit,
 
+
+    /** Removes everything stored about one member: daily records, waiting sleep rows and AI messages. */
+  deleteMember(userId: string): { records: number; insights: number } {
+    let n = 0;
+    for (const k of [...records.keys()]) if (k.startsWith(`${userId}|`) && records.delete(k)) n++;
+    for (const k of [...pendingSleep.keys()]) if (k.startsWith(`${userId}|`)) pendingSleep.delete(k);
+    const before = insights.length;
+    const keep = insights.filter((i) => i.userId !== userId);
+    insights.length = 0;
+    insights.push(...keep);
+    scheduleSave();
+    return { records: n, insights: before - keep.length };
+  },
+
   /** Clears the data. The audit log is kept, so a reset itself stays traceable. */
   reset() {
     records.clear();

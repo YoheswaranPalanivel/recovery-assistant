@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import type { MemberProfile } from "@shared/types";
+import { erasedIds } from "./erasure.js";
 
 /**
  * DEMO PROFILES. The Fitbit dataset has no names, ages or conditions, so each
@@ -23,7 +24,8 @@ let cacheKey = "";
 
 /** Same pseudonym, same profile, every time. Names are unique across members. */
 export function profilesFor(userIds: string[]): Map<string, MemberProfile> {
-  const sorted = [...new Set(userIds)].sort();
+  // erased members keep their place, so deleting someone never renames anyone else
+  const sorted = [...new Set([...userIds, ...erasedIds()])].sort();
   const key = sorted.join(",");
   if (cache && cacheKey === key) return cache;
   const map = new Map<string, MemberProfile>();

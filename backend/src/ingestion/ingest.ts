@@ -6,6 +6,7 @@ import type { IngestionBatch, RejectedRow } from "@shared/types";
 import { buildMapping, describeMapping, type ColumnMapping } from "./columnMapper.js";
 import { validateRow } from "./validator.js";
 import { store } from "../store/memoryStore.js";
+import { isErased } from "../programme/erasure.js";
 
 type Row = Record<string, unknown>;
 
@@ -34,6 +35,13 @@ export async function ingestRows(
       rejected.push({ source: opts.fileName, rowNumber: total + 1, reason: result.reason });
       continue;
     }
+
+    // a member who asked for their data to be deleted is never imported again
+    if (isErased(result.kind === "activity" ? result.record.userId : result.sleep.userId)) {
+      rejected.push({ source: opts.fileName, rowNumber: total + 1, reason: "member asked for their data to be deleted" });
+      continue;
+    }
+
     const outcome =
       result.kind === "activity" ? store.upsertRecord(result.record) : store.mergeSleep(result.sleep);
     if (outcome === "duplicate") {

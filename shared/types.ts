@@ -259,16 +259,15 @@ export type CarePlan = {
   actions: PlanAction[];
   totalMinutes: number;
   targetMinutes: number;
-  message: string; // to the member, for the health worker to review and send
-  workerNote: string; // one line for the health worker
+  message: string;
+  workerNote: string;
   source: "llm" | "template";
   model: string | null;
   check: { passed: boolean; attempts: number; problems: string[] };
-  context: Record<string, unknown>; // exactly what the AI received
+  context: Record<string, unknown>;
+  messageEnglish: string;
+  language: "Tamil" | "English";
 };
-
-
-// ---------- Health worker actions and "did it help?" ----------
 
 export type ActionKind = "call" | "visit" | "plan_sent" | "device_check";
 

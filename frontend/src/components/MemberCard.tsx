@@ -156,7 +156,15 @@ export function MemberCard({ m, onChanged }: { m: MemberWeek; onChanged?: () => 
               ))}
             </ul>
             <p className="mt-1 text-[0.78rem] text-slate">{plan.totalMinutes} minutes in total, within their personal limit</p>
-            <p className="mt-2.5 border-t border-white/70 pt-2.5">“{plan.message}”</p>
+             <p className="mt-2.5 border-t border-white/70 pt-2.5" lang={plan.language === "Tamil" ? "ta" : "en"}>
+              “{plan.message}”
+            </p>
+            {plan.language === "Tamil" && plan.messageEnglish && (
+              <p className="mt-1 text-[0.8rem] text-slate">
+                <span className="mr-1 rounded bg-white/70 px-1.5 py-0.5 text-[0.7rem] font-bold">Tamil</span>
+                In English: {plan.messageEnglish}
+              </p>
+            )}
             {plan.workerNote && <p className="mt-1.5 text-[0.8rem] text-slate">For you: {plan.workerNote}</p>}
           </div>
         ) : (

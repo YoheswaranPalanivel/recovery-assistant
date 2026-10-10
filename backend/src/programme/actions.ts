@@ -36,6 +36,15 @@ export function recordAction(a: { userId: string; kind: ActionKind; note: string
   return action;
 }
 
+
+/** Removes every contact recorded for one member. Returns how many were removed. */
+export function deleteActionsFor(userId: string): number {
+  const before = actions.length;
+  actions = actions.filter((a) => a.userId !== userId);
+  save();
+  return before - actions.length;
+}
+
 export function clearActions() {
   actions = [];
   save();

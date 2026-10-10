@@ -1,12 +1,12 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import type { GoalProgress, MemberDetail } from "@shared/types";
 import { api } from "@/lib/api";
 import { useLive } from "@/lib/live";
+import { useAuth } from "@/lib/auth";
 import { MemberCard, STATUS } from "@/components/MemberCard";
 
 const KIND = { call: "Called", visit: "Visited", plan_sent: "Plan sent", device_check: "Watch checked" } as const;
@@ -44,11 +44,38 @@ export default function MemberPage() {
   const [d, setD] = useState<MemberDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
+  const { user } = useAuth();
+  const router = useRouter();
+  const [deleting, setDeleting] = useState(false);
+  const [deleted, setDeleted] = useState<string | null>(null);
+
+  const erase = async () => {
+    if (!d) return;
+    if (!confirm(`Delete all of ${d.member.profile.name}'s data? Daily records, contacts, check-ins and messages are removed for good, and future uploads for this member are blocked.`)) return;
+    setDeleting(true);
+    try {
+      const r = await api.deleteMember(userId);
+      setDeleted(`Deleted ${r.removed.records} daily records, ${r.removed.contacts} contacts, ${r.removed.checkIns} check-ins and ${r.removed.insights} messages.`);
+      setTimeout(() => router.push("/members"), 2500);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     api.member(userId).then(setD).catch((e) => setError(e.message));
   }, [userId, version, reload]);
 
+  if (deleted)
+    return (
+      <div className="card mx-auto mt-16 max-w-[560px] p-6 text-center">
+        <p className="display text-[1.3rem] font-extrabold">Member data deleted</p>
+        <p className="mt-2 text-slate">{deleted}</p>
+        <p className="mt-1 text-[0.85rem] text-slate">Returning to members…</p>
+      </div>
+    );
   if (error) return <p className="mt-10 text-alarm">{error}</p>;
   if (!d) return <p className="mt-10 text-slate">Loading…</p>;
 
@@ -59,7 +86,7 @@ export default function MemberPage() {
 
   return (
     <div className="flex flex-col gap-5 pt-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Link href="/members" className="text-sm text-slate hover:text-brand">
           ← All members
         </Link>
@@ -155,6 +182,28 @@ export default function MemberPage() {
           )}
         </section>
       </div>
+
+      {user?.role === "admin" && (
+        <section className="card border-alarm/20 p-5">
+          <h2 className="display text-[1.05rem] font-extrabold">Privacy: delete this member&apos;s data</h2>
+          <p className="mt-1 max-w-[70ch] text-[0.86rem] text-slate">
+            For a member who asks to be removed. Deletes their daily records, contacts, check-ins and AI messages, and blocks their data from
+            being imported again. The activity log records that it happened, without any of the deleted data.
+          </p>
+          {deleted ? (
+            <p className="mt-3 rounded-xl bg-stride-pale px-3.5 py-2.5 text-[0.88rem] font-semibold text-stride-deep">✓ {deleted} Returning to members…</p>
+          ) : (
+            <button
+              type="button"
+              onClick={erase}
+              disabled={deleting}
+              className="mt-3 rounded-xl border border-alarm/40 bg-paper px-4 py-2 text-[0.88rem] font-bold text-alarm hover:bg-alarm-pale disabled:opacity-60"
+            >
+              {deleting ? "Deleting…" : `Delete ${p.name}'s data`}
+            </button>
+          )}
+        </section>
+      )}
     </div>
   );
 }

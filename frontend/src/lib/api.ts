@@ -98,4 +98,10 @@ export const api = {
   },
   loadDemo: () => request<{ batches: IngestionBatch[]; dataset: string }>("/api/demo/load", { method: "POST" }),
   reset: () => request<{ ok: true }>("/api/reset", { method: "POST" }),
+
+  deleteMember: (userId: string) =>
+  request<{ ok: true; removed: { records: number; contacts: number; checkIns: number; insights: number } }>(
+    `/api/members/${encodeURIComponent(userId)}`,
+    { method: "DELETE" },
+  ),
 };
