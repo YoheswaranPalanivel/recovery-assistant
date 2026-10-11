@@ -16,8 +16,8 @@ const MOODS: { key: CheckIn["mood"]; emoji: string; label: string; ta: string }[
 const GOAL_TA: Record<string, string> = { active_minutes: "சுறுசுறுப்பான நிமிடங்கள்", active_days: "சுறுசுறுப்பான நாட்கள்", sleep: "தூக்கம்" };
 
 /**
- * What a member sees on their phone: their week, their health worker's message, and a 10-second check-in.
- * Demo: opened by staff to show the member's side; a real member app would have its own sign-in.
+ * What a member sees on their phone: their week, their health worker's message, a 10-second check-in,
+ * and their consent. Demo: opened by staff to show the member's side; a real member app would have its own sign-in.
  */
 export default function MemberPhone() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +28,19 @@ export default function MemberPhone() {
   const [mood, setMood] = useState<CheckIn["mood"] | null>(null);
   const [med, setMed] = useState<boolean | null>(null);
   const [sending, setSending] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const changeConsent = async (status: "given" | "withdrawn") => {
+    setSaving(true);
+    try {
+      await api.setConsent(userId, status);
+      setD(await api.memberApp(userId));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     api.memberApp(userId).then(setD).catch((e) => setError(e.message));
@@ -102,71 +115,103 @@ export default function MemberPhone() {
               </div>
             </div>
 
-            {d.message && (
+            {d.consent.status === "given" ? (
+              <>
+                {d.message && (
+                  <div className="rounded-3xl bg-paper p-4">
+                    <p className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-slate">{t("From your health worker", "உங்கள் சுகாதார பணியாளரிடமிருந்து")}</p>
+                    <p className="mt-2 text-[0.95rem] leading-snug">“{d.message.text}”</p>
+                  </div>
+                )}
+
+                <div className="rounded-3xl bg-paper p-4">
+                  <p className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-slate">{t("Today's check-in", "இன்றைய பதிவு")}</p>
+                  {d.todayCheckIn ? (
+                    <p className="mt-2 text-[0.95rem]">
+                      {tamil ? (
+                        <>
+                          ✓ நன்றி! நீங்கள் <b>{d.todayCheckIn.mood === "good" ? "நல்லா இருக்கீங்க 😊" : d.todayCheckIn.mood === "okay" ? "பரவாயில்லை 😐" : "சரியில்லை 😟"}</b> என்று சொன்னீர்கள்.
+                          {d.todayCheckIn.mood === "not_well" ? " உங்கள் சுகாதார பணியாளர் உங்களைத் தொடர்பு கொள்வார்." : ""}
+                        </>
+                      ) : (
+                        <>
+                          ✓ Thanks! You said you&apos;re{" "}
+                          <b>{d.todayCheckIn.mood === "good" ? "feeling good 😊" : d.todayCheckIn.mood === "okay" ? "okay 😐" : "not feeling well 😟"}</b>
+                          {d.todayCheckIn.mood === "not_well" ? ". Your health worker will contact you." : "."}
+                        </>
+                      )}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="mt-2 text-[0.95rem]">{t("How are you feeling today?", "இன்று எப்படி இருக்கீங்க?")}</p>
+                      <div className="mt-2 grid grid-cols-3 gap-2">
+                        {MOODS.map((m) => (
+                          <button
+                            key={m.key}
+                            type="button"
+                            onClick={() => setMood(m.key)}
+                            className={`flex min-w-0 flex-col items-center rounded-2xl border-2 px-1 py-2 text-center font-semibold leading-tight ${tamil ? "text-[0.68rem]" : "text-[0.8rem]"} ${mood === m.key ? "border-brand bg-brand-soft" : "border-rule bg-paper"}`}
+                          >
+                            <span className="text-[1.6rem]">{m.emoji}</span>
+                            {tamil ? m.ta : m.label}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-[0.95rem]">{t("Did you take your medicine today?", "இன்று மருந்து எடுத்துக்கொண்டீர்களா?")}</p>
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        {[
+                          { v: true, l: t("Yes", "ஆம்") },
+                          { v: false, l: t("Not yet", "இன்னும் இல்லை") },
+                        ].map((o) => (
+                          <button
+                            key={o.l}
+                            type="button"
+                            onClick={() => setMed(o.v)}
+                            className={`rounded-2xl border-2 py-2 text-[0.88rem] font-semibold ${med === o.v ? "border-brand bg-brand-soft" : "border-rule bg-paper"}`}
+                          >
+                            {o.l}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={send}
+                        disabled={!mood || sending}
+                        className="brand-gradient mt-4 w-full rounded-2xl py-3 font-bold text-white disabled:opacity-50"
+                      >
+                        {sending ? t("Sending…", "அனுப்புகிறது…") : t("Send", "அனுப்பு")}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : (
               <div className="rounded-3xl bg-paper p-4">
-                <p className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-slate">{t("From your health worker", "உங்கள் சுகாதார பணியாளரிடமிருந்து")}</p>
-                <p className="mt-2 text-[0.95rem] leading-snug">“{d.message.text}”</p>
+                <p className="text-[0.95rem] font-bold">{t("You've stopped sharing", "பகிர்வதை நிறுத்திவிட்டீர்கள்")}</p>
+                <p className="mt-1 text-[0.88rem] text-slate">
+                  {t(
+                    "No plans, messages or check-ins until you agree again. You can ask your health worker to delete your data.",
+                    "மீண்டும் ஒப்புக்கொள்ளும் வரை திட்டம், செய்தி, பதிவு எதுவும் இல்லை. உங்கள் தரவை நீக்க சுகாதார பணியாளரிடம் கேட்கலாம்.",
+                  )}
+                </p>
               </div>
             )}
 
             <div className="rounded-3xl bg-paper p-4">
-              <p className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-slate">{t("Today's check-in", "இன்றைய பதிவு")}</p>
-              {d.todayCheckIn ? (
-                <p className="mt-2 text-[0.95rem]">
-                  {tamil ? (
-                    <>
-                      ✓ நன்றி! நீங்கள் <b>{d.todayCheckIn.mood === "good" ? "நல்லா இருக்கீங்க 😊" : d.todayCheckIn.mood === "okay" ? "பரவாயில்லை 😐" : "சரியில்லை 😟"}</b> என்று சொன்னீர்கள்.
-                      {d.todayCheckIn.mood === "not_well" ? " உங்கள் சுகாதார பணியாளர் உங்களைத் தொடர்பு கொள்வார்." : ""}
-                    </>
-                  ) : (
-                    <>
-                      ✓ Thanks! You said you&apos;re{" "}
-                      <b>{d.todayCheckIn.mood === "good" ? "feeling good 😊" : d.todayCheckIn.mood === "okay" ? "okay 😐" : "not feeling well 😟"}</b>
-                      {d.todayCheckIn.mood === "not_well" ? ". Your health worker will contact you." : "."}
-                    </>
-                  )}
-                </p>
+              <p className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-slate">{t("Your data, your choice", "உங்கள் தரவு, உங்கள் விருப்பம்")}</p>
+              <ul className="mt-2 space-y-1 text-[0.85rem]">
+                <li>• {t("Your steps, sleep and check-ins are shared with your health worker.", "உங்கள் நடை, தூக்கம், பதிவுகள் உங்கள் சுகாதார பணியாளருக்கு மட்டும் தெரியும்.")}</li>
+                <li>• {t("AI suggestions never see your name.", "AI பரிந்துரைகளுக்கு உங்கள் பெயர் தெரியாது.")}</li>
+                <li>• {t("You can stop at any time.", "எப்போது வேண்டுமானாலும் நிறுத்தலாம்.")}</li>
+              </ul>
+              {d.consent.status === "given" ? (
+                <button type="button" onClick={() => changeConsent("withdrawn")} disabled={saving} className="mt-3 w-full rounded-2xl border-2 border-rule py-2 text-[0.88rem] font-semibold text-slate disabled:opacity-50">
+                  {t("Stop sharing my data", "என் தரவைப் பகிர்வதை நிறுத்து")}
+                </button>
               ) : (
-                <>
-                  <p className="mt-2 text-[0.95rem]">{t("How are you feeling today?", "இன்று எப்படி இருக்கீங்க?")}</p>
-                  <div className="mt-2 grid grid-cols-3 gap-2">
-                    {MOODS.map((m) => (
-                      <button
-                        key={m.key}
-                        type="button"
-                        onClick={() => setMood(m.key)}
-                        className={`flex flex-col items-center rounded-2xl border-2 py-2 text-[0.8rem] font-semibold ${mood === m.key ? "border-brand bg-brand-soft" : "border-rule bg-paper"}`}
-                      >
-                        <span className="text-[1.6rem]">{m.emoji}</span>
-                        {tamil ? m.ta : m.label}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="mt-3 text-[0.95rem]">{t("Did you take your medicine today?", "இன்று மருந்து எடுத்துக்கொண்டீர்களா?")}</p>
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    {[
-                      { v: true, l: t("Yes", "ஆம்") },
-                      { v: false, l: t("Not yet", "இன்னும் இல்லை") },
-                    ].map((o) => (
-                      <button
-                        key={o.l}
-                        type="button"
-                        onClick={() => setMed(o.v)}
-                        className={`rounded-2xl border-2 py-2 text-[0.88rem] font-semibold ${med === o.v ? "border-brand bg-brand-soft" : "border-rule bg-paper"}`}
-                      >
-                        {o.l}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={send}
-                    disabled={!mood || sending}
-                    className="brand-gradient mt-4 w-full rounded-2xl py-3 font-bold text-white disabled:opacity-50"
-                  >
-                    {sending ? t("Sending…", "அனுப்புகிறது…") : t("Send", "அனுப்பு")}
-                  </button>
-                </>
+                <button type="button" onClick={() => changeConsent("given")} disabled={saving} className="brand-gradient mt-3 w-full rounded-2xl py-2.5 font-bold text-white disabled:opacity-50">
+                  {t("I agree, share again", "ஒப்புக்கொள்கிறேன், மீண்டும் பகிர்")}
+                </button>
               )}
             </div>
             <p className="px-2 pb-2 text-center text-[0.72rem] text-slate">

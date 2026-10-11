@@ -54,6 +54,7 @@ export default function SecurityPage() {
         { name: "Strict file checks", how: `.csv, .xlsx, .xls only, up to ${s.maxUploadMb} MB, file names sanitised.`, on: true },
         { name: "Row validation", how: "Impossible or missing values are rejected with a reason, not stored.", on: true },
         { name: "No invented fields", how: "Metrics the dataset lacks are shown as unavailable.", on: true },
+        { name: "Consent, and withdraw any time", how: "Members can stop sharing from their phone. While consent is withdrawn there are no AI plans, messages or check-ins; every change is logged.", on: true },
         { name: "Delete a member on request", how: "An admin can erase one member: records, contacts, check-ins and messages. Their pseudonym is blocked from future imports.", on: true },
         { name: "Demo profiles, clearly labelled", how: "Names, age bands and preferences are sample data; the dataset has none. Real ones would come from onboarding, with consent.", on: true },
         { name: "Local snapshot", how: "Pseudonymised records only, so a restart doesn't empty the dashboard.", on: s.persistence },

@@ -5,6 +5,7 @@ import { readSecure, writeSecure } from "../security/vault.js";
 import { store } from "../store/memoryStore.js";
 import { deleteActionsFor } from "./actions.js";
 import { deleteCheckInsFor } from "./checkins.js";
+import { deleteConsentFor } from "./consent.js";
 
 /**
  * Right to erasure. Deleting a member removes everything stored about them, and their
@@ -34,6 +35,7 @@ export function eraseMember(userId: string) {
   const { records, insights } = store.deleteMember(userId);
   const contacts = deleteActionsFor(userId);
   const checkIns = deleteCheckInsFor(userId);
+  deleteConsentFor(userId);
   erased.add(userId);
   save();
   return { records, insights, contacts, checkIns };

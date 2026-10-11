@@ -49,6 +49,7 @@ function OutcomeLine({ a }: { a: MemberAction }) {
 export function MemberCard({ m, onChanged }: { m: MemberWeek; onChanged?: () => void }) {
   const s = STATUS[m.status];
   const p = m.profile;
+  const withdrawn = m.consent?.status === "withdrawn";
   const [busy, setBusy] = useState(false);
   const [plan, setPlan] = useState<CarePlan | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -89,12 +90,13 @@ export function MemberCard({ m, onChanged }: { m: MemberWeek; onChanged?: () => 
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <h3 className="display text-[1.15rem] font-extrabold">
-                    <Link href={`/members/${encodeURIComponent(p.userId)}`} className="hover:text-brand hover:underline">
-                      {p.name}
-                    </Link>
-                  </h3>
+              <h3 className="display text-[1.15rem] font-extrabold">
+                <Link href={`/members/${encodeURIComponent(p.userId)}`} className="hover:text-brand hover:underline">
+                  {p.name}
+                </Link>
+              </h3>
               <span className={`rounded-full px-2.5 py-0.5 text-[0.75rem] font-bold ${s.badge}`}>● {s.label}</span>
+              {withdrawn && <span className="rounded-full bg-fog px-2.5 py-0.5 text-[0.75rem] font-bold text-slate">🔒 Consent withdrawn</span>}
             </div>
             <p className="mt-0.5 text-[0.84rem] text-slate">
               {p.ageBand} · {p.condition}
@@ -133,7 +135,12 @@ export function MemberCard({ m, onChanged }: { m: MemberWeek; onChanged?: () => 
           ))}
         </div>
 
-        {m.status === "check_device" ? (
+        {withdrawn ? (
+          <p className="mt-3 rounded-xl bg-fog px-3.5 py-2.5 text-[0.88rem]">
+            This member has stopped sharing. No AI plans or messages until they agree again; a call is fine if they want one, and they can ask
+            for their data to be deleted.
+          </p>
+        ) : m.status === "check_device" ? (
           <p className="mt-3 rounded-xl bg-fog px-3.5 py-2.5 text-[0.88rem]">
             Suggested action: call to check the watch is worn, charged and syncing. No health message is sent without data.
           </p>
@@ -156,7 +163,7 @@ export function MemberCard({ m, onChanged }: { m: MemberWeek; onChanged?: () => 
               ))}
             </ul>
             <p className="mt-1 text-[0.78rem] text-slate">{plan.totalMinutes} minutes in total, within their personal limit</p>
-             <p className="mt-2.5 border-t border-white/70 pt-2.5" lang={plan.language === "Tamil" ? "ta" : "en"}>
+            <p className="mt-2.5 border-t border-white/70 pt-2.5" lang={plan.language === "Tamil" ? "ta" : "en"}>
               “{plan.message}”
             </p>
             {plan.language === "Tamil" && plan.messageEnglish && (
@@ -181,7 +188,10 @@ export function MemberCard({ m, onChanged }: { m: MemberWeek; onChanged?: () => 
         {m.lastAction && <OutcomeLine a={m.lastAction} />}
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {(m.status === "check_device" ? (["device_check", "call"] as ActionKind[]) : (["call", "visit", ...(plan ? (["plan_sent"] as ActionKind[]) : [])] as ActionKind[])).map((k) => (
+          {(m.status === "check_device"
+            ? (["device_check", "call"] as ActionKind[])
+            : (["call", "visit", ...(plan && !withdrawn ? (["plan_sent"] as ActionKind[]) : [])] as ActionKind[])
+          ).map((k) => (
             <button
               key={k}
               type="button"

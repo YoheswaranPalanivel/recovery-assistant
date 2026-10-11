@@ -19,6 +19,7 @@ import { actionSummary, actionsFor, clearActions, recordAction, withActions } fr
 import { communitySummary, communityView } from "../programme/community.js";
 import { applyCheckIn, clearCheckIns, recentCheckIn, recordCheckIn } from "../programme/checkins.js";
 import { eraseMember } from "../programme/erasure.js";
+import { applyConsent, clearConsents, consentOf, hasConsent, recordConsent } from "../programme/consent.js";
 import { profilesFor } from "../programme/profiles.js";
 import { dateRange as range } from "../analytics/metrics.js";import {
   SESSION_COOKIE,
@@ -129,6 +130,7 @@ api.post("/reset-stream", requireIngestKey, (_req, res) => {
   store.reset();
   clearActions();
   clearCheckIns();
+  clearConsents();
   markAlertsSeen([], true);
   emitStreamUpdate({ batches: [], newAlerts: [], reset: true });
   store.addAudit({ user: "ingest-api", action: "reset", detail: "data cleared before replay" });
@@ -206,6 +208,7 @@ api.post("/reset", requireRole("admin"), (req, res) => {
   store.reset();
   clearActions();
   clearCheckIns();
+  clearConsents();
   markAlertsSeen([], true);
   emitStreamUpdate({ batches: [], newAlerts: [], reset: true });
   store.addAudit({ user: req.user!.username, action: "reset", detail: "all data cleared" });
@@ -252,7 +255,7 @@ api.get("/overview", (req, res, next) => {
 
 api.get("/today", (_req, res) => {
   const recs = completedDays(store.allRecords());
-  const view = todayView(recs, applyCheckIn);
+  const view = todayView(recs, (w) => applyConsent(applyCheckIn(w)));
   const names = new Map([...profilesFor([...new Set(recs.map((r) => r.userId))]).values()].map((p) => [p.userId, p.name]));
   res.json(withActions(view, recs, names));
 });
@@ -311,7 +314,21 @@ api.get("/member-app/:userId", (req, res, next) => {
       streak: d.streak,
       message: sent ? { text: sent.note, from: sent.by, at: sent.at } : null,
       todayCheckIn: recentCheckIn(userId),
+      consent: consentOf(userId),
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** The member gives or withdraws consent (from their phone). Logged, and the lists update live. */
+api.post("/consent", (req, res, next) => {
+  try {
+    const { userId, status } = z.object({ userId: z.string().min(1).max(64), status: z.enum(["given", "withdrawn"]) }).parse(req.body);
+    const c = recordConsent(userId, status, "member");
+    store.addAudit({ user: req.user!.username, action: status === "given" ? "consent_given" : "consent_withdrawn", detail: `${userId} ${status === "given" ? "gave" : "withdrew"} consent` });
+    emitChange();
+    res.json(c);
   } catch (e) {
     next(e);
   }
@@ -327,6 +344,10 @@ const CheckInSchema = z.object({
 api.post("/checkins", (req, res, next) => {
   try {
     const body = CheckInSchema.parse(req.body);
+    if (!hasConsent(body.userId)) {
+      res.status(403).json({ error: "Check-ins are off because consent was withdrawn." });
+      return;
+    }
     const c = recordCheckIn(body);
     store.addAudit({ user: req.user!.username, action: "member_checkin", detail: `${body.userId} checked in` });
     emitChange();
@@ -357,7 +378,7 @@ api.delete("/members/:userId", requireRole("admin"), (req, res) => {
 /** All members, most urgent first, each with their latest contact. */
 api.get("/members", (_req, res) => {
   const recs = completedDays(store.allRecords());
-  const weeks = allMemberWeeks(recs, applyCheckIn);
+  const weeks = allMemberWeeks(recs, (w) => applyConsent(applyCheckIn(w)));
   const names = new Map(weeks.map((w) => [w.profile.userId, w.profile.name]));
   const view = withActions({ asOf: null, counts: { needs_support: 0, slipping: 0, check_device: 0, needs_rest: 0, on_track: 0 }, priorities: weeks, community: { metGoalPct: 0, previousMetGoalPct: null, members: 0 } }, recs, names);
   res.json(view.priorities);
@@ -373,7 +394,7 @@ api.get("/members/:userId", (req, res, next) => {
     if (!recs.length || !max) throw new IngestionError("No data for this member.");
     const profile = profilesFor([...new Set(all.map((r) => r.userId))]).get(userId)!;
     const d = memberDetail(recs, profile, max);
-    res.json({ ...d, member: applyCheckIn(d.member), actions: actionsFor(userId, recs) });
+    res.json({ ...d, member: applyConsent(applyCheckIn(d.member)), actions: actionsFor(userId, recs) });
   } catch (e) {
     next(e);
   }
@@ -500,6 +521,10 @@ api.post("/community/summary", insightLimiter, async (req, res, next) => {
 api.post("/plan", insightLimiter, async (req, res, next) => {
   try {
     const { userId } = z.object({ userId: z.string().min(1).max(64) }).parse(req.body);
+    if (!hasConsent(userId)) {
+      res.status(403).json({ error: "This member has withdrawn consent, so no AI plan is made for them." });
+      return;
+    }
     const all = completedDays(store.allRecords());
     const recs = all.filter((r) => r.userId === userId);
     const { max } = range(all);

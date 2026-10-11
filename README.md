@@ -41,6 +41,7 @@ People with or at risk of type 2 diabetes are advised to stay active, sit less a
 
 - User ids become HMAC-SHA256 pseudonyms before storage. Pseudonymised data is still personal data, so access is controlled and logged.
 - The AI receives about a dozen calculated figures, an age band, mobility, preferences and language, marked `"anonymous"`: no name, no id, no daily rows, no check-in details. For real patients, run the open-weight model on your own servers or use a zero-retention agreement.
+- **Consent:** members can stop sharing, and agree again, from their phone. While consent is withdrawn there are no AI plans, messages or check-ins; every change is kept, encrypted, and logged.
 - **Right to erasure:** one member's data can be deleted on request, and their pseudonym is blocked from future imports. The activity log records that it happened, without any of the deleted data.
 - Sign-in on every page, API call and WebSocket; scrypt password hashing with constant-time comparison; JWT in an httpOnly, SameSite=Lax cookie; 10 sign-in attempts per 15 minutes per IP.
 - Roles: **admin** (load, upload and clear data, delete a member, activity log) and **analyst** (health worker view: members, plans, contacts).

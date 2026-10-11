@@ -20,3 +20,4 @@ backend/data/erased.json
 backend/data/.data-key
 backend/data/erased.json
 backend/data/*.tmp
+backend/data/consents.json

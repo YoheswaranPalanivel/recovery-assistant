@@ -226,6 +226,7 @@ export type MemberWeek = {
   profile: MemberProfile;
   lastAction?: MemberAction | null; // the health worker's latest contact, with its outcom
   checkIn?: CheckIn | null; // the member's check-in in the last 24 hours
+  consent?: Consent | null; // the member's current consent
   status: MemberStatus;
   reasons: string[]; // plain-language reasons, each backed by a figure
   goals: GoalProgress[];
@@ -364,4 +365,11 @@ export type MemberApp = {
   streak: number;
   message: { text: string; from: string; at: string } | null; // latest plan sent by the health worker
   todayCheckIn: CheckIn | null;
+  consent: Consent;
+};
+
+export type Consent = {
+  status: "given" | "withdrawn";
+  at: string | null;
+  source: "enrolment" | "member" | "health_worker";
 };

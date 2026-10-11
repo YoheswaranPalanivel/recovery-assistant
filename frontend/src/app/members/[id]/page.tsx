@@ -36,7 +36,9 @@ function Ring({ g }: { g: GoalProgress }) {
   );
 }
 
-/** One member's wellness journey: this week, the last 4 weeks, streak, plan and contacts. */
+const shortDate = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+
+/** One member's wellness journey: this week, the last 4 weeks, streak, plan, contacts and consent. */
 export default function MemberPage() {
   const { id } = useParams<{ id: string }>();
   const userId = decodeURIComponent(id);
@@ -108,6 +110,13 @@ export default function MemberPage() {
           <p className="mt-2 text-[0.95rem] text-slate">
             {p.ageBand} · {p.condition} · {p.mobility === "limited" ? "limited mobility" : "no mobility limits"} · prefers {p.prefers} · {p.language}
           </p>
+          {m.consent && (
+            <p className={`mt-1 text-[0.85rem] font-semibold ${m.consent.status === "given" ? "text-stride-deep" : "text-alarm"}`}>
+              {m.consent.status === "given"
+                ? `✓ Consent given ${m.consent.at ? `on ${shortDate(m.consent.at)}` : "at enrolment"}`
+                : `🔒 Consent withdrawn${m.consent.at ? ` on ${shortDate(m.consent.at)}` : ""}`}
+            </p>
+          )}
         </div>
         <div className="rounded-2xl bg-[linear-gradient(135deg,#E3F6EF,#E4F0FA)] px-5 py-3 text-center">
           <p className="display num text-[2rem] font-extrabold leading-none">{d.streak}</p>
@@ -168,7 +177,7 @@ export default function MemberPage() {
                 <li key={a.id} className="py-2.5">
                   <div className="flex justify-between gap-2">
                     <b>{KIND[a.kind]}</b>
-                    <span className="text-slate">{new Date(a.at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                    <span className="text-slate">{shortDate(a.at)}</span>
                   </div>
                   <p className={`mt-0.5 text-[0.8rem] ${a.outcome.status === "more_active" ? "text-stride" : "text-slate"}`}>
                     {a.outcome.status === "waiting"
@@ -190,18 +199,14 @@ export default function MemberPage() {
             For a member who asks to be removed. Deletes their daily records, contacts, check-ins and AI messages, and blocks their data from
             being imported again. The activity log records that it happened, without any of the deleted data.
           </p>
-          {deleted ? (
-            <p className="mt-3 rounded-xl bg-stride-pale px-3.5 py-2.5 text-[0.88rem] font-semibold text-stride-deep">✓ {deleted} Returning to members…</p>
-          ) : (
-            <button
-              type="button"
-              onClick={erase}
-              disabled={deleting}
-              className="mt-3 rounded-xl border border-alarm/40 bg-paper px-4 py-2 text-[0.88rem] font-bold text-alarm hover:bg-alarm-pale disabled:opacity-60"
-            >
-              {deleting ? "Deleting…" : `Delete ${p.name}'s data`}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={erase}
+            disabled={deleting}
+            className="mt-3 rounded-xl border border-alarm/40 bg-paper px-4 py-2 text-[0.88rem] font-bold text-alarm hover:bg-alarm-pale disabled:opacity-60"
+          >
+            {deleting ? "Deleting…" : `Delete ${p.name}'s data`}
+          </button>
         </section>
       )}
     </div>
