@@ -57,6 +57,7 @@ export default function SecurityPage() {
         { name: "Delete a member on request", how: "An admin can erase one member: records, contacts, check-ins and messages. Their pseudonym is blocked from future imports.", on: true },
         { name: "Demo profiles, clearly labelled", how: "Names, age bands and preferences are sample data; the dataset has none. Real ones would come from onboarding, with consent.", on: true },
         { name: "Local snapshot", how: "Pseudonymised records only, so a restart doesn't empty the dashboard.", on: s.persistence },
+        { name: "Encrypted at rest", how: "Records, contacts, check-ins and the erasure list are stored with AES-256-GCM; a changed file is rejected, not read.", on: true },
       ],
     },
     {

@@ -91,6 +91,26 @@ export const config = {
 
 
     /**
+   * 32-byte key that encrypts the data files on disk (AES-256-GCM). Set DATA_ENCRYPTION_KEY
+   * (64 hex characters) in .env or a secrets manager; otherwise one is generated in data/.data-key.
+   */
+  dataKey: (() => {
+    const fromEnv = process.env.DATA_ENCRYPTION_KEY?.trim();
+    if (fromEnv && /^[0-9a-fA-F]{64}$/.test(fromEnv)) return Buffer.from(fromEnv, "hex");
+    const file = path.resolve(import.meta.dirname, "../data/.data-key");
+    try {
+      return Buffer.from(fs.readFileSync(file, "utf8").trim(), "hex");
+    } catch {
+      const k = crypto.randomBytes(32);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, k.toString("hex"), { mode: 0o600 });
+      return k;
+    }
+  })(),
+
+  
+
+    /**
    * Community diabetes programme goals. Weekly targets build gradually from each
    * member's own level towards the programme goal, so nobody starts at a goal they can't reach.
    */

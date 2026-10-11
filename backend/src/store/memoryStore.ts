@@ -3,6 +3,7 @@ import path from "node:path";
 import type { AuditEntry, DailyRecord, IngestionBatch, Insight, RejectedRow } from "@shared/types";
 import type { SleepEntry } from "../ingestion/validator.js";
 import { config } from "../config.js";
+import { readSecure, writeSecure } from "../security/vault.js";
 
 /**
  * In-memory store with a JSON snapshot on disk, so a backend restart doesn't
@@ -49,9 +50,8 @@ function saveNow() {
       reasonCounts: [...reasonCounts],
       audit,
     };
-    const tmp = `${SNAPSHOT}.tmp`;
-    fs.writeFileSync(tmp, JSON.stringify(data));
-    fs.renameSync(tmp, SNAPSHOT); // atomic replace: never a half-written file
+
+    writeSecure(SNAPSHOT, data);
   } catch (e) {
     console.error("[store] could not save snapshot:", (e as Error).message);
   }
@@ -60,7 +60,7 @@ function saveNow() {
 export function loadSnapshot(): number {
   if (!config.persistData || !fs.existsSync(SNAPSHOT)) return 0;
   try {
-    const d = JSON.parse(fs.readFileSync(SNAPSHOT, "utf8"));
+    const d = readSecure<any>(SNAPSHOT);
     for (const r of d.records ?? []) records.set(key(r.userId, r.date), r);
     for (const [k, v] of d.pendingSleep ?? []) pendingSleep.set(k, v);
     batches.push(...(d.batches ?? []));

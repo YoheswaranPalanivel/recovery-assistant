@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { config } from "../config.js";
+import { readSecure, writeSecure } from "../security/vault.js";
 import { store } from "../store/memoryStore.js";
 import { deleteActionsFor } from "./actions.js";
 import { deleteCheckInsFor } from "./checkins.js";
@@ -15,16 +16,14 @@ const erased = new Set<string>();
 
 if (config.persistData && fs.existsSync(FILE)) {
   try {
-    for (const id of JSON.parse(fs.readFileSync(FILE, "utf8")) as string[]) erased.add(id);
+    for (const id of readSecure<string[]>(FILE)) erased.add(id);
   } catch {
     console.error("[erasure] could not read erased.json, starting empty");
   }
 }
 function save() {
   if (!config.persistData) return;
-  fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  fs.writeFileSync(`${FILE}.tmp`, JSON.stringify([...erased]));
-  fs.renameSync(`${FILE}.tmp`, FILE);
+  writeSecure(FILE, [...erased]);
 }
 
 export const isErased = (userId: string) => erased.has(userId);

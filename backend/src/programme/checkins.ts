@@ -3,6 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { CheckIn, MemberWeek } from "@shared/types";
 import { config } from "../config.js";
+import { readSecure, writeSecure } from "../security/vault.js";
 
 /** Daily check-ins sent from the member's phone. Kept in their own small file. */
 const FILE = path.resolve(import.meta.dirname, "../../data/checkins.json");
@@ -10,16 +11,14 @@ let checkIns: CheckIn[] = [];
 
 if (config.persistData && fs.existsSync(FILE)) {
   try {
-    checkIns = JSON.parse(fs.readFileSync(FILE, "utf8")) as CheckIn[];
+    checkIns = readSecure<CheckIn[]>(FILE);
   } catch {
     console.error("[checkins] could not read checkins.json, starting empty");
   }
 }
 function save() {
   if (!config.persistData) return;
-  fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  fs.writeFileSync(`${FILE}.tmp`, JSON.stringify(checkIns));
-  fs.renameSync(`${FILE}.tmp`, FILE);
+  writeSecure(FILE, checkIns);
 }
 
 export function recordCheckIn(c: Omit<CheckIn, "id" | "at">): CheckIn {

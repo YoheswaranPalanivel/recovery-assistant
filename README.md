@@ -48,7 +48,9 @@ People with or at risk of type 2 diabetes are advised to stay active, sit less a
 - Activity log of sign-ins, uploads, resets, AI requests, contacts, check-ins and deletions: actions only, no data values.
 - Secrets live only in `backend/.env`, which isn't committed.
 
-**Not built yet (production gaps):** encryption at rest, consent flows, a separate sign-in for members, per-worker access to only their own members, and a real database.
+- **Encrypted at rest:** records, contacts, check-ins and the erasure list are stored with AES-256-GCM (key in `DATA_ENCRYPTION_KEY` or a generated `data/.data-key`); a file that was changed is rejected, not read.
+
+**Not built yet (production gaps):** consent flows, a separate sign-in for members, per-worker access to only their own members, keys in a key management service, and a real database.
 
 ## Tech stack
 

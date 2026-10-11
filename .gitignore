@@ -17,3 +17,6 @@ backend/data/fitbit/
 backend/data/actions.json
 backend/data/checkins.json
 backend/data/erased.json
+backend/data/.data-key
+backend/data/erased.json
+backend/data/*.tmp

@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import type { ActionKind, ActionSummary, ContactAction, DailyRecord, MemberAction, Outcome, TodayView } from "@shared/types";
 import { config } from "../config.js";
 import { addDays, round } from "../analytics/metrics.js";
+import { readSecure, writeSecure } from "../security/vault.js";
 
 /**
  * What health workers did (call, visit, plan sent, device check) and whether the
@@ -15,16 +16,14 @@ let actions: ContactAction[] = [];
 function load() {
   if (!config.persistData || !fs.existsSync(FILE)) return;
   try {
-    actions = JSON.parse(fs.readFileSync(FILE, "utf8")) as ContactAction[];
+    actions = readSecure<ContactAction[]>(FILE);
   } catch {
     console.error("[actions] could not read actions.json, starting empty");
   }
 }
 function save() {
   if (!config.persistData) return;
-  fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  fs.writeFileSync(`${FILE}.tmp`, JSON.stringify(actions));
-  fs.renameSync(`${FILE}.tmp`, FILE);
+  writeSecure(FILE, actions);
 }
 load();
 
