@@ -27,9 +27,9 @@ export function EmptyState({ onLoaded }: { onLoaded: () => void }) {
   return (
     <section className="mt-10 grid gap-10 card p-8 md:grid-cols-[1.1fr_1fr] md:p-12">
       <div>
-        <h1 className="display text-[2.6rem] font-bold leading-[1.05]">No activity data yet</h1>
+        <h1 className="display text-[2.6rem] font-bold leading-[1.05]">No member data yet</h1>
         <p className="mt-3 max-w-[52ch] text-slate">
-          Load a dataset to see who is meeting their step target, where activity or sleep has dropped, and to write an insight for any person.
+          Load the programme&apos;s activity and sleep data to see who needs your help today, why, and what to suggest for their week.
         </p>
         {isAdmin ? (
           <div className="mt-6 flex flex-wrap gap-3">
@@ -45,15 +45,24 @@ export function EmptyState({ onLoaded }: { onLoaded: () => void }) {
         )}
         {error && <p className="mt-3 text-sm text-alarm">{error}</p>}
       </div>
-      <div className="text-sm">
-        <p className="font-bold">What “Load the dataset” does</p>
-        <p className="mt-2 text-slate">
-          It reads the Fitbit files in backend/data/fitbit, or the synthetic test files in backend/data/sample if the real ones aren’t there,
-          and runs them through the same checks as an upload.
-        </p>
-        <p className="mt-5 font-bold">Or stream it live, one day at a time</p>
-        <code className="mt-2 block rounded bg-fog px-2 py-1.5 text-ink">npm run replay -- --reset --shift-to-today</code>
-        <p className="mt-1 text-slate">Run in the backend folder. This page fills in by itself.</p>
+      <div>
+        <p className="text-[0.8rem] font-bold uppercase tracking-[0.1em] text-slate">What happens next</p>
+        <ol className="mt-3 space-y-3">
+          {[
+            ["Checked and protected", "Every row is validated, and member ids are replaced with codes before anything is stored."],
+            ["Who needs you today", "Each member gets a personal goal and a status with reasons, and the Today list puts the most urgent first."],
+            ["Plan and follow up", "Suggest a safe weekly plan, record your call or visit, and see whether it helped."],
+          ].map(([t, d], i) => (
+            <li key={t} className="flex gap-3">
+              <span className="brand-gradient flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.85rem] font-bold text-white">{i + 1}</span>
+              <div>
+                <p className="font-bold">{t}</p>
+                <p className="text-[0.9rem] text-slate">{d}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="mt-5 text-[0.8rem] text-slate">Activity and sleep are real Fitbit data; member profiles are demo data.</p>
       </div>
     </section>
   );
