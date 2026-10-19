@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { LiveProvider } from "@/lib/live";
+import { StaffLangProvider } from "@/lib/lang";
 import { Sidebar } from "./Sidebar";
 
 /** Nothing private renders until the session is confirmed. */
@@ -24,10 +25,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   
   return (
     <LiveProvider>
+        <StaffLangProvider>
       <Sidebar />
       <div className="lg:pl-[248px]">
         <main className="mx-auto w-full max-w-[1360px] px-4 pb-16 pt-2 sm:px-6 lg:px-10 lg:pt-6">{children}</main>
       </div>
+        </StaffLangProvider>
     </LiveProvider>
   );
 }

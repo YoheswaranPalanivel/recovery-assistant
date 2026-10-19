@@ -269,6 +269,7 @@ export type CarePlan = {
   context: Record<string, unknown>;
   messageEnglish: string;
   language: "Tamil" | "English";
+  translations: Record<"English" | "Tamil" | "Hindi" | "Telugu" | "Malayalam", string>;
 };
 
 export type ActionKind = "call" | "visit" | "plan_sent" | "device_check";

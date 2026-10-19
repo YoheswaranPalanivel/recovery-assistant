@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { GlucoseBand, GlucoseKind, GlucoseSummary } from "@shared/types";
 import { api } from "@/lib/api";
+import { useStaffLang } from "@/lib/lang";
+import { LABELS, render } from "@shared/messages";
 
 export const BAND: Record<GlucoseBand, { label: string; ta: string; chip: string; dot: string }> = {
   low: { label: "Low", ta: "குறைவு", chip: "bg-alarm-pale text-alarm", dot: "var(--color-alarm)" },
@@ -24,13 +26,18 @@ export const when = (iso: string) => {
 
 /** One-line chip for a member card: the latest reading against their care team's levels. */
 export function GlucoseChip({ g }: { g: GlucoseSummary | null | undefined }) {
+  const { lang } = useStaffLang();
   if (!g?.latest) return null;
-  const b = BAND[g.latest.band];
-  return (
-    <p className={`mt-2 inline-flex items-center gap-2 rounded-lg px-2.5 py-1 text-[0.82rem] font-semibold ${b.chip}`}>
-      🩸 {g.latest.mgdl} mg/dL · {KIND[g.latest.kind].label.toLowerCase()} · {when(g.latest.at)} · {b.label}
-    </p>
-  );
+  const r = g.latest;
+  const text = render("glucose_staff", lang, {
+    mgdl: r.mgdl,
+    band: LABELS.band[r.band][lang],
+    low: g.limits.low,
+    high: g.limits.high,
+    kind: LABELS.kind[r.kind][lang],
+    time: when(r.at),
+  });
+  return <p className={`mt-2 inline-flex items-center gap-2 rounded-lg px-2.5 py-1 text-[0.82rem] font-semibold ${BAND[r.band].chip}`}>🩸 {text}</p>;
 }
 
 /** The member page panel: latest reading, the care team's levels, 14 days of readings, and entry. */
@@ -42,6 +49,7 @@ export function GlucosePanel({ userId, g, isAdmin, onChanged }: { userId: string
   const [editing, setEditing] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const demo = g.readings.some((r) => r.source === "demo");
+  const { lang } = useStaffLang();
 
   const add = async () => {
     setErr(null);
@@ -89,8 +97,8 @@ export function GlucosePanel({ userId, g, isAdmin, onChanged }: { userId: string
               {g.latest.mgdl} <span className="text-[0.9rem] font-semibold text-slate">mg/dL</span>
             </p>
             <p className="mt-1 text-[0.8rem] text-slate">
-              {KIND[g.latest.kind].label} · {when(g.latest.at)}{" "}
-              <span className={`ml-1 rounded-full px-2 py-0.5 font-bold ${BAND[g.latest.band].chip}`}>{BAND[g.latest.band].label}</span>
+              {LABELS.kind[g.latest.kind][lang]} · {when(g.latest.at)}{" "}
+              <span className={`ml-1 rounded-full px-2 py-0.5 font-bold ${BAND[g.latest.band].chip}`}>{LABELS.band[g.latest.band][lang]}</span>
             </p>
           </div>
         ) : (
@@ -201,6 +209,14 @@ export function PhoneGlucose({ userId, g, tamil, onSaved }: { userId: string; g:
   };
 
   const b = g.latest ? BAND[g.latest.band] : null;
+  const lang = tamil ? "Tamil" : "English";
+  const note = g.latest
+    ? render(g.latest.band === "low" ? "glucose_low_patient" : g.latest.band === "high" ? "glucose_high_patient" : "glucose_in_range_patient", lang, {
+        mgdl: g.latest.mgdl,
+        low: g.limits.low,
+        high: g.limits.high,
+      })
+    : null;
   return (
     <div className="rounded-3xl bg-paper p-4">
       <p className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-slate">{t("Blood sugar", "இரத்த சர்க்கரை")}</p>
@@ -213,6 +229,7 @@ export function PhoneGlucose({ userId, g, tamil, onSaved }: { userId: string; g:
         </div>
       )}
       {g.latest && <p className="text-[0.78rem] text-slate">{tamil ? KIND[g.latest.kind].ta : KIND[g.latest.kind].label} · {when(g.latest.at)}</p>}
+      {note && <p className={`mt-2 rounded-2xl px-3 py-2 text-[0.85rem] leading-snug ${g.latest?.band === "low" ? "bg-alarm-pale" : g.latest?.band === "high" ? "bg-amber-pale" : "bg-stride-pale"}`}>{note}</p>}
       <div className="mt-3 grid grid-cols-3 gap-1.5">
         {(Object.keys(KIND) as GlucoseKind[]).map((k) => (
           <button

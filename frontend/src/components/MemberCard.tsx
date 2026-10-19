@@ -6,6 +6,8 @@ import type { ActionKind, CarePlan, MemberAction, MemberStatus, MemberWeek } fro
 import { api } from "@/lib/api";
 import { IconSparkle } from "./icons";
 import { GlucoseChip } from "./Glucose";
+import { useStaffLang } from "@/lib/lang";
+import { LANG_NAME } from "@shared/messages";
 
 export const STATUS: Record<MemberStatus, { label: string; badge: string; avatar: string }> = {
   needs_support: { label: "Needs support", badge: "bg-alarm-pale text-alarm", avatar: "#C2410C" },
@@ -51,6 +53,7 @@ export function MemberCard({ m, onChanged }: { m: MemberWeek; onChanged?: () => 
   const s = STATUS[m.status];
   const p = m.profile;
   const withdrawn = m.consent?.status === "withdrawn";
+  const { lang: staffLang } = useStaffLang();
   const [busy, setBusy] = useState(false);
   const [plan, setPlan] = useState<CarePlan | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -168,10 +171,11 @@ export function MemberCard({ m, onChanged }: { m: MemberWeek; onChanged?: () => 
             <p className="mt-2.5 border-t border-white/70 pt-2.5" lang={plan.language === "Tamil" ? "ta" : "en"}>
               “{plan.message}”
             </p>
-            {plan.language === "Tamil" && plan.messageEnglish && (
+            <p className="mt-1 text-[0.75rem] text-slate">Approved message in {plan.language}, from the template list, not written by AI</p>
+            {staffLang !== plan.language && plan.translations && (
               <p className="mt-1 text-[0.8rem] text-slate">
-                <span className="mr-1 rounded bg-white/70 px-1.5 py-0.5 text-[0.7rem] font-bold">Tamil</span>
-                In English: {plan.messageEnglish}
+                <span className="mr-1 rounded bg-white/70 px-1.5 py-0.5 text-[0.7rem] font-bold">{LANG_NAME[staffLang]}</span>
+                {plan.translations[staffLang]}
               </p>
             )}
             {plan.workerNote && <p className="mt-1.5 text-[0.8rem] text-slate">For you: {plan.workerNote}</p>}

@@ -7,6 +7,8 @@ import { api, type Status } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useLive } from "@/lib/live";
 import { timeAgo } from "@/lib/format";
+import { useStaffLang } from "@/lib/lang";
+import { LANGS, LANG_NAME, type Lang } from "@shared/messages";
 import { IconDatabase, IconFlow, IconGrid, IconLogout, IconMenu, IconShield, IconTarget, IconUsers } from "./icons";
 
 const NAV = [
@@ -15,6 +17,7 @@ const NAV = [
   { href: "/community", label: "Community", Icon: IconGrid },
   { href: "/data", label: "Data", Icon: IconDatabase },
   { href: "/how-it-works", label: "How it works", Icon: IconFlow },
+    { href: "/messages", label: "Approved messages", Icon: IconFlow },
   { href: "/security", label: "Privacy & security", Icon: IconShield },
 ];
 
@@ -114,7 +117,7 @@ export function Sidebar() {
             ))}
           </ul>
         </div>
-
+        <StaffLanguage />
         {user && (
           <div className="flex items-center gap-3 rounded-2xl border border-rule px-3 py-2.5">
             <span className="brand-gradient flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[0.8rem] font-bold text-white">{initials}</span>
@@ -163,5 +166,24 @@ export function Sidebar() {
         </div>
       )}
     </>
+  );
+}
+
+
+
+/** The language this staff member reads medical content in. Numbers never change, only the approved words. */
+function StaffLanguage() {
+  const { lang, setLang } = useStaffLang();
+  return (
+    <label className="mb-3 flex items-center justify-between gap-2 rounded-2xl border border-rule px-3 py-2 text-[0.82rem] text-slate">
+      I read in
+      <select value={lang} onChange={(e) => setLang(e.target.value as Lang)} className="rounded-lg border border-rule bg-paper px-2 py-1 text-ink">
+        {LANGS.map((l) => (
+          <option key={l} value={l}>
+            {LANG_NAME[l]}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
