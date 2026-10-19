@@ -92,8 +92,68 @@ export const TEMPLATES = {
     },
     review: DRAFT,
   },
+    alert_glucose_low: {
+    audience: "staff and family",
+    text: {
+      English: "Low blood sugar: {mgdl} mg/dL (limit {low}) · {time}",
+      Tamil: "குறைந்த சர்க்கரை: {mgdl} mg/dL (அளவு {low}) · {time}",
+      Hindi: "कम शुगर: {mgdl} mg/dL (सीमा {low}) · {time}",
+      Telugu: "తక్కువ చక్కెర: {mgdl} mg/dL (స్థాయి {low}) · {time}",
+      Malayalam: "കുറഞ്ഞ പഞ്ചസാര: {mgdl} mg/dL (പരിധി {low}) · {time}",
+    },
+    review: DRAFT,
+  },
+  alert_glucose_high: {
+    audience: "staff and family",
+    text: {
+      English: "High blood sugar: {mgdl} mg/dL (limit {high}) · {time}",
+      Tamil: "அதிக சர்க்கரை: {mgdl} mg/dL (அளவு {high}) · {time}",
+      Hindi: "अधिक शुगर: {mgdl} mg/dL (सीमा {high}) · {time}",
+      Telugu: "ఎక్కువ చక్కెర: {mgdl} mg/dL (స్థాయి {high}) · {time}",
+      Malayalam: "കൂടിയ പഞ്ചസാര: {mgdl} mg/dL (പരിധി {high}) · {time}",
+    },
+    review: DRAFT,
+  },
+  alert_not_well: {
+    audience: "staff and family",
+    text: {
+      English: "Said they are not feeling well · {time}",
+      Tamil: "உடல்நிலை சரியில்லை என்று சொன்னார் · {time}",
+      Hindi: "बताया कि तबीयत ठीक नहीं है · {time}",
+      Telugu: "ఒంట్లో బాగోలేదని చెప్పారు · {time}",
+      Malayalam: "സുഖമില്ലെന്ന് പറഞ്ഞു · {time}",
+    },
+    review: DRAFT,
+  },
+  alert_help: {
+    audience: "staff and family",
+    text: {
+      English: "Pressed \"I need help\" · {time}",
+      Tamil: "\"உதவி வேண்டும்\" அழுத்தினார் · {time}",
+      Hindi: "\"मदद चाहिए\" दबाया · {time}",
+      Telugu: "\"సహాయం కావాలి\" నొక్కారు · {time}",
+      Malayalam: "\"സഹായം വേണം\" അമർത്തി · {time}",
+    },
+    review: DRAFT,
+  },
+  help_sent_patient: {
+    audience: "patient",
+    text: {
+      English: "Your health worker has been told and will contact you soon. In an emergency, call 108.",
+      Tamil: "உங்கள் சுகாதார பணியாளருக்குத் தெரிவிக்கப்பட்டது, விரைவில் தொடர்பு கொள்வார். அவசரம் என்றால் 108-ஐ அழைக்கவும்.",
+      Hindi: "आपके स्वास्थ्य कार्यकर्ता को बता दिया गया है, वे जल्द संपर्क करेंगे। आपात स्थिति में 108 पर कॉल करें।",
+      Telugu: "మీ ఆరోగ్య కార్యకర్తకు తెలియజేశాం, త్వరలో సంప్రదిస్తారు. అత్యవసరమైతే 108కి కాల్ చేయండి.",
+      Malayalam: "നിങ്ങളുടെ ആരോഗ്യ പ്രവർത്തകനെ അറിയിച്ചു, ഉടൻ ബന്ധപ്പെടും. അടിയന്തരമാണെങ്കിൽ 108-ൽ വിളിക്കുക.",
+    },
+    review: DRAFT,
+  },
 } satisfies Record<string, { audience: string; text: Text; review: Review }>;
 export type MessageKey = keyof typeof TEMPLATES;
+
+
+export const UI = {
+  need_help: { English: "I need help", Tamil: "உதவி வேண்டும்", Hindi: "मदद चाहिए", Telugu: "సహాయం కావాలి", Malayalam: "സഹായം വേണം" },
+} satisfies Record<string, Text>;
 
 /** Approved words used inside messages: reading bands, reading times, activities. */
 export const LABELS = {

@@ -24,6 +24,8 @@ import type {
   GlucoseLimits,
   GlucoseReading,
   GlucoseSummary,
+  CareAlert,
+  CareAlertView,
 } from "@shared/types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -80,6 +82,8 @@ export const api = {
   plan: (userId: string) => request<CarePlan>("/api/plan", json({ userId })),
   members: () => request<MemberWeek[]>("/api/members"),
   setConsent: (userId: string, status: Consent["status"]) => request<Consent>("/api/consent", json({ userId, status })),
+  alerts: () => request<CareAlertView[]>("/api/alerts"),
+  askHelp: (userId: string) => request<{ alert: CareAlert; isNew: boolean }>("/api/help", json({ userId })),
   addGlucose: (userId: string, mgdl: number, kind: GlucoseKind) =>
   request<{ reading: GlucoseReading; summary: GlucoseSummary }>("/api/glucose", json({ userId, mgdl, kind })),
   setGlucoseLimits: (userId: string, low: number, high: number) =>

@@ -5,3 +5,4 @@ next-env.d.ts
 *.tsbuildinfo
 backend/data/checkins.json
 backend/data/glucose.json
+backend/data/alerts.json

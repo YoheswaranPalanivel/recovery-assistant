@@ -20,7 +20,8 @@ import { communitySummary, communityView } from "../programme/community.js";
 import { applyCheckIn, clearCheckIns, recentCheckIn, recordCheckIn } from "../programme/checkins.js";
 import { eraseMember } from "../programme/erasure.js";
 import { applyConsent, clearConsents, consentOf, hasConsent, recordConsent } from "../programme/consent.js";
-import { VALID_RANGE, applyGlucose, clearGlucose, glucoseSummary, recordReading, seedDemoGlucose, setLimits } from "../programme/glucose.js";
+import { VALID_RANGE, applyGlucose, bandOf, clearGlucose, glucoseSummary, limitsFor, recordReading, seedDemoGlucose, setLimits } from "../programme/glucose.js";
+import { activeAlerts, clearAlerts, raiseAlert } from "../programme/alerts.js";
 import { profilesFor } from "../programme/profiles.js";
 import { dateRange as range } from "../analytics/metrics.js";import {
   SESSION_COOKIE,
@@ -133,6 +134,7 @@ api.post("/reset-stream", requireIngestKey, (_req, res) => {
   clearCheckIns();
   clearConsents();
   clearGlucose();
+  clearAlerts();
   markAlertsSeen([], true);
   emitStreamUpdate({ batches: [], newAlerts: [], reset: true });
   store.addAudit({ user: "ingest-api", action: "reset", detail: "data cleared before replay" });
@@ -213,6 +215,7 @@ api.post("/reset", requireRole("admin"), (req, res) => {
   clearCheckIns();
   clearConsents();
   clearGlucose();
+  clearAlerts();
   markAlertsSeen([], true);
   emitStreamUpdate({ batches: [], newAlerts: [], reset: true });
   store.addAudit({ user: req.user!.username, action: "reset", detail: "all data cleared" });
@@ -338,7 +341,32 @@ api.post("/consent", (req, res, next) => {
     next(e);
   }
 });
+/**
+ * The "I need help" button on the member's phone. Always allowed, even if consent was withdrawn:
+ * asking for help must never be blocked.
+ */
+api.post("/help", (req, res, next) => {
+  try {
+    const { userId } = z.object({ userId: z.string().min(1).max(64) }).parse(req.body);
+    const { alert, isNew } = raiseAlert(userId, "help");
+    store.addAudit({ user: req.user!.username, action: "help_requested", detail: `${userId} asked for help` });
+    emitChange();
+    res.json({ alert, isNew });
+  } catch (e) {
+    next(e);
+  }
+});
 
+/** Alerts waiting for a response or being handled, with the member's demo name and language. */
+api.get("/alerts", (_req, res) => {
+  const ids = [...new Set(store.allRecords().map((r) => r.userId))];
+  const profiles = profilesFor(ids);
+  res.json(
+    activeAlerts()
+      .filter((a) => profiles.has(a.userId))
+      .map((a) => ({ ...a, name: profiles.get(a.userId)!.name, language: profiles.get(a.userId)!.language })),
+  );
+});
 
 const GlucoseSchema = z.object({
   userId: z.string().min(1).max(64),
@@ -361,6 +389,12 @@ api.post("/glucose", (req, res, next) => {
     }
     const r = recordReading({ ...body, source: req.user!.role === "admin" ? "helper" : "patient" });
     store.addAudit({ user: req.user!.username, action: "glucose_reading", detail: `${body.userId} reading recorded` });
+    const l = limitsFor(body.userId);
+    const band = bandOf(r.mgdl, l);
+    if (band !== "in_range") {
+      raiseAlert(body.userId, band === "low" ? "glucose_low" : "glucose_high", { mgdl: r.mgdl, low: l.low, high: l.high });
+      store.addAudit({ user: "system", action: "alert_raised", detail: `${body.userId}: ${band} blood sugar` });
+    }
     emitChange();
     res.json({ reading: r, summary: glucoseSummary(body.userId) });
   } catch (e) {
@@ -400,6 +434,10 @@ api.post("/checkins", (req, res, next) => {
     }
     const c = recordCheckIn(body);
     store.addAudit({ user: req.user!.username, action: "member_checkin", detail: `${body.userId} checked in` });
+    if (body.mood === "not_well") {
+      raiseAlert(body.userId, "not_well");
+      store.addAudit({ user: "system", action: "alert_raised", detail: `${body.userId}: not feeling well` });
+    }
     emitChange();
     res.json(c);
   } catch (e) {

@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { useLive } from "@/lib/live";
 import { EmptyState } from "@/components/EmptyState";
 import { MemberCard, STATUS } from "@/components/MemberCard";
+import { OpenAlerts } from "@/components/OpenAlerts";
 
 function greeting() {
   const h = new Date().getHours();
@@ -54,7 +55,8 @@ export default function TodayPage() {
           Demo profiles · activity and sleep are real (Fitbit)
         </span>
       </div>
-
+      
+      <OpenAlerts />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {(["needs_support", "slipping", "check_device", "on_track"] as const).map((k) => (
           <div key={k} className="card flex items-center gap-3 px-4 py-3">

@@ -404,3 +404,24 @@ export type GlucoseSummary = {
   readings: GlucoseReading[]; // last 14 days, oldest first
   last7: { count: number; low: number; high: number; inRangePct: number | null };
 };
+
+
+
+// ---------- Care alerts: risks that need someone to respond now ----------
+
+export type CareAlertKind = "glucose_low" | "glucose_high" | "not_well" | "help";
+
+export type CareAlert = {
+  id: string;
+  userId: string;
+  kind: CareAlertKind;
+  severity: "urgent" | "attention";
+  at: string; // when it was raised (or last raised again)
+  data: { mgdl?: number; low?: number; high?: number };
+  status: "open" | "accepted" | "resolved";
+  acceptedBy: string | null;
+  acceptedAt: string | null;
+  resolvedAt: string | null;
+};
+
+export type CareAlertView = CareAlert & { name: string; language: string };

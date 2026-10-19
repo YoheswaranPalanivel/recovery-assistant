@@ -6,6 +6,7 @@ import type { CheckIn, MemberApp } from "@shared/types";
 import { api } from "@/lib/api";
 import { useLive } from "@/lib/live";
 import { PhoneGlucose } from "@/components/Glucose";
+import { UI, asLang, render } from "@shared/messages";
 
 const DOT: Record<string, string> = { none: "#EEF3F2", low: "#E8892B", some: "#F7C978", good: "#7FD6C6", great: "#0E9F8E" };
 const DAY = ["S", "M", "T", "W", "T", "F", "S"];
@@ -30,6 +31,16 @@ export default function MemberPhone() {
   const [med, setMed] = useState<boolean | null>(null);
   const [sending, setSending] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [helpSent, setHelpSent] = useState(false);
+
+  const askHelp = async () => {
+    try {
+      await api.askHelp(userId);
+      setHelpSent(true);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
 
   const changeConsent = async (status: "given" | "withdrawn") => {
     setSaving(true);
@@ -86,6 +97,14 @@ export default function MemberPhone() {
                   : t("Every small step counts this week", "இந்த வாரம் ஒவ்வொரு சின்ன அடியும் முக்கியம்")}
               </p>
             </div>
+
+            {helpSent ? (
+              <p className="rounded-3xl bg-alarm-pale px-4 py-3 text-[0.92rem] font-semibold">✓ {render("help_sent_patient", asLang(d.language), {})}</p>
+            ) : (
+              <button type="button" onClick={askHelp} className="rounded-3xl bg-alarm px-4 py-4 text-[1.15rem] font-extrabold text-white shadow-lg active:scale-[0.99]">
+                🆘 {UI.need_help[asLang(d.language)]}
+              </button>
+            )}
 
             <div className="rounded-3xl bg-paper p-4">
               <p className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-slate">{t("This week", "இந்த வாரம்")}</p>

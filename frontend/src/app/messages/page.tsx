@@ -10,6 +10,11 @@ const NAMES: Record<MessageKey, string> = {
   plan_line: "One activity in a weekly plan",
   plan_patient: "Weekly plan (to the patient)",
   medicine_reminder: "Medicine reminder (to the patient)",
+  alert_glucose_low: "Alert: low reading (to staff and family)",
+  alert_glucose_high: "Alert: high reading (to staff and family)",
+  alert_not_well: "Alert: not feeling well (to staff and family)",
+  alert_help: "Alert: asked for help (to staff and family)",
+  help_sent_patient: "Help request received (to the patient)",
 };
 
 /** Every message a patient can receive, in every language, with its review status. */
