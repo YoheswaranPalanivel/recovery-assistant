@@ -9,6 +9,7 @@ next-env.d.ts
 .env.local
 .env.*.local
 backend/data/.pseudonym-secret
+backend/data/.data-key
 
 # local data
 backend/data/store.json
@@ -17,7 +18,7 @@ backend/data/fitbit/
 backend/data/actions.json
 backend/data/checkins.json
 backend/data/erased.json
-backend/data/.data-key
-backend/data/erased.json
-backend/data/*.tmp
 backend/data/consents.json
+backend/data/glucose.json
+backend/data/alerts.json
+backend/data/*.tmp

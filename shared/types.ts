@@ -422,6 +422,36 @@ export type CareAlert = {
   acceptedBy: string | null;
   acceptedAt: string | null;
   resolvedAt: string | null;
+  // routing and escalation
+  primaryId: string; // helper asked first
+  backupId: string; // helper asked if the first doesn't accept in time
+  level: 0 | 1 | 2; // 0: primary (and family if urgent), 1: backup and family asked to call, 2: family shown the emergency number
+  timeline: AlertEvent[];
+  report: VisitReport | null;
 };
 
-export type CareAlertView = CareAlert & { name: string; language: string };
+export type AlertEvent = {
+  at: string;
+  kind: "raised" | "sent" | "accepted" | "declined" | "escalated" | "family_call" | "emergency" | "reported";
+  text: string; // plain English for the activity trail; numbers come from data
+};
+
+export type VisitReport = {
+  at: string;
+  by: string; // helper name
+  checks: Record<"seen" | "talking" | "plan_followed" | "care_team_told" | "ambulance", boolean>;
+  recheckMgdl: number | null;
+  note: string; // shown exactly as written, never machine translated
+};
+
+export type Helper = { id: string; name: string; area: string; language: "Tamil" | "English" | "Hindi" };
+export type FamilyContact = { name: string; relation: string; place: string; language: "Tamil" | "English" | "Hindi" };
+export type CareCircle = {
+  userId: string;
+  primary: Helper;
+  backup: Helper;
+  family: FamilyContact | null; // only if the member agreed to share with family
+  careTeam: { name: string; language: "Tamil" | "English" | "Hindi" };
+};
+
+export type CareAlertView = CareAlert & { name: string; language: string; circle: CareCircle };

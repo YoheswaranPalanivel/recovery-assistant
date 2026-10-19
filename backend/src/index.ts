@@ -9,7 +9,8 @@ import { ZodError } from "zod";
 import { config } from "./config.js";
 import { api } from "./routes/api.js";
 import { IngestionError } from "./ingestion/ingest.js";
-import { attachRealtime } from "./realtime.js";
+import { attachRealtime, emitChange } from "./realtime.js";
+import { checkEscalations } from "./programme/alerts.js";
 import { llmLabel } from "./llm/llmClient.js";
 import { checkOrigin, readToken, SESSION_COOKIE } from "./auth/auth.js";
 import { loadSnapshot } from "./store/memoryStore.js";
@@ -62,6 +63,10 @@ server.on("error", (err: NodeJS.ErrnoException) => {
 });
 
 const restored = loadSnapshot();
+
+setInterval(() => {
+  if (checkEscalations()) emitChange();
+}, 5000).unref();
 
 server.listen(config.port, () => {
   console.log(`\n  Recovery Assistant API  →  http://localhost:${config.port}/api/health`);

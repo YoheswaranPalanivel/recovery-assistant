@@ -21,7 +21,8 @@ import { applyCheckIn, clearCheckIns, recentCheckIn, recordCheckIn } from "../pr
 import { eraseMember } from "../programme/erasure.js";
 import { applyConsent, clearConsents, consentOf, hasConsent, recordConsent } from "../programme/consent.js";
 import { VALID_RANGE, applyGlucose, bandOf, clearGlucose, glucoseSummary, limitsFor, recordReading, seedDemoGlucose, setLimits } from "../programme/glucose.js";
-import { activeAlerts, clearAlerts, raiseAlert } from "../programme/alerts.js";
+import { acceptAlert, activeAlerts, alertsFor, alertsForHelper, clearAlerts, declineAlert, raiseAlert, reportAlert } from "../programme/alerts.js";
+import { HELPERS, circleFor } from "../programme/circle.js";
 import { profilesFor } from "../programme/profiles.js";
 import { dateRange as range } from "../analytics/metrics.js";import {
   SESSION_COOKIE,
@@ -358,16 +359,82 @@ api.post("/help", (req, res, next) => {
 });
 
 /** Alerts waiting for a response or being handled, with the member's demo name and language. */
+/** Adds the member's demo name, language and care circle to alerts. */
+function alertViews(list: ReturnType<typeof activeAlerts>) {
+  const profiles = profilesFor([...new Set(store.allRecords().map((r) => r.userId))]);
+  return list
+    .filter((a) => profiles.has(a.userId))
+    .map((a) => ({ ...a, name: profiles.get(a.userId)!.name, language: profiles.get(a.userId)!.language, circle: circleFor(a.userId) }));
+}
+
+/** Alerts waiting for a response or being handled. */
 api.get("/alerts", (_req, res) => {
-  const ids = [...new Set(store.allRecords().map((r) => r.userId))];
-  const profiles = profilesFor(ids);
-  res.json(
-    activeAlerts()
-      .filter((a) => profiles.has(a.userId))
-      .map((a) => ({ ...a, name: profiles.get(a.userId)!.name, language: profiles.get(a.userId)!.language })),
-  );
+  res.json(alertViews(activeAlerts()));
 });
 
+/** Demo helpers, so staff can act as one on the helper page. */
+api.get("/helpers", (_req, res) => res.json(HELPERS));
+
+/** What one helper needs to act on now. */
+api.get("/helpers/:id/alerts", (req, res) => {
+  res.json(alertViews(alertsForHelper(String(req.params.id).slice(0, 40))));
+});
+
+/** A member's care circle and their recent alerts with visit reports. */
+api.get("/circle/:userId", (req, res) => {
+  const userId = String(req.params.userId).slice(0, 64);
+  res.json({ circle: circleFor(userId), alerts: alertViews(alertsFor(userId).slice(0, 10)) });
+});
+
+const HelperSchema = z.object({ helperId: z.string().min(1).max(40) });
+
+api.post("/alerts/:id/accept", (req, res, next) => {
+  try {
+    const { helperId } = HelperSchema.parse(req.body);
+    const a = acceptAlert(String(req.params.id), helperId);
+    store.addAudit({ user: req.user!.username, action: "alert_accepted", detail: `${a.userId}: accepted by ${a.acceptedBy}` });
+    emitChange();
+    res.json(a);
+  } catch (e) {
+    if (e instanceof Error && !(e instanceof z.ZodError)) return res.status(409).json({ error: e.message });
+    next(e);
+  }
+});
+
+api.post("/alerts/:id/decline", (req, res, next) => {
+  try {
+    const { helperId } = HelperSchema.parse(req.body);
+    const a = declineAlert(String(req.params.id), helperId);
+    store.addAudit({ user: req.user!.username, action: "alert_declined", detail: `${a.userId}: ${helperId} can't go` });
+    emitChange();
+    res.json(a);
+  } catch (e) {
+    if (e instanceof Error && !(e instanceof z.ZodError)) return res.status(409).json({ error: e.message });
+    next(e);
+  }
+});
+
+const ReportSchema = z.object({
+  helperId: z.string().min(1).max(40),
+  checks: z.object({ seen: z.boolean(), talking: z.boolean(), plan_followed: z.boolean(), care_team_told: z.boolean(), ambulance: z.boolean() }),
+  recheckMgdl: z.number().int().min(VALID_RANGE.min).max(VALID_RANGE.max).nullable(),
+  note: z.string().max(500).default(""),
+});
+
+/** The helper's visit report: a checklist (same meaning in every language), a recheck reading and a note. */
+api.post("/alerts/:id/report", (req, res, next) => {
+  try {
+    const { helperId, ...r } = ReportSchema.parse(req.body);
+    const a = reportAlert(String(req.params.id), helperId, r);
+    if (r.recheckMgdl) recordReading({ userId: a.userId, mgdl: r.recheckMgdl, kind: "random", source: "helper" });
+    store.addAudit({ user: req.user!.username, action: "visit_reported", detail: `${a.userId}: visit reported by ${a.report!.by}` });
+    emitChange();
+    res.json(a);
+  } catch (e) {
+    if (e instanceof Error && !(e instanceof z.ZodError)) return res.status(409).json({ error: e.message });
+    next(e);
+  }
+});
 const GlucoseSchema = z.object({
   userId: z.string().min(1).max(64),
   mgdl: z.number().int().min(VALID_RANGE.min).max(VALID_RANGE.max),

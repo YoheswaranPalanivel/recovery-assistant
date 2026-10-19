@@ -167,6 +167,13 @@ export const LABELS = {
     post_meal: { English: "After a meal", Tamil: "சாப்பிட்ட பின்", Hindi: "खाने के बाद", Telugu: "భోజనం తర్వాత", Malayalam: "ഭക്ഷണത്തിന് ശേഷം" },
     random: { English: "Other time", Tamil: "வேறு நேரம்", Hindi: "अन्य समय", Telugu: "ఇతర సమయం", Malayalam: "മറ്റ് സമയം" },
   },
+    check: {
+    seen: { English: "Saw the person", Tamil: "நேரில் பார்த்தேன்", Hindi: "व्यक्ति से मिला", Telugu: "వ్యక్తిని చూశాను", Malayalam: "ആളെ നേരിൽ കണ്ടു" },
+    talking: { English: "Awake and talking normally", Tamil: "விழிப்புடன், சாதாரணமாக பேசுகிறார்", Hindi: "जागे हुए हैं और सामान्य रूप से बात कर रहे हैं", Telugu: "మెలకువగా ఉన్నారు, మామూలుగా మాట్లాడుతున్నారు", Malayalam: "ഉണർന്നിരിക്കുന്നു, സാധാരണ സംസാരിക്കുന്നു" },
+    plan_followed: { English: "Low-sugar steps from their care plan followed", Tamil: "பராமரிப்புத் திட்டத்தின் குறைந்த சர்க்கரை வழிமுறைகள் பின்பற்றப்பட்டன", Hindi: "देखभाल योजना के कम-शुगर कदम अपनाए गए", Telugu: "సంరక్షణ ప్రణాళికలోని తక్కువ చక్కెర చర్యలు పాటించారు", Malayalam: "പരിചരണ പദ്ധതിയിലെ കുറഞ്ഞ പഞ്ചസാര നടപടികൾ പാലിച്ചു" },
+    care_team_told: { English: "Care team informed", Tamil: "மருத்துவக் குழுவுக்குத் தெரிவிக்கப்பட்டது", Hindi: "देखभाल टीम को बताया गया", Telugu: "సంరక్షణ బృందానికి తెలియజేశాం", Malayalam: "പരിചരണ സംഘത്തെ അറിയിച്ചു" },
+    ambulance: { English: "Ambulance called (108)", Tamil: "ஆம்புலன்ஸ் அழைக்கப்பட்டது (108)", Hindi: "एम्बुलेंस बुलाई गई (108)", Telugu: "అంబులెన్స్ పిలిచాం (108)", Malayalam: "ആംബുലൻസ് വിളിച്ചു (108)" },
+  },
   activity: {
     brisk_walk: { English: "Brisk walk", Tamil: "வேகமான நடை", Hindi: "तेज़ चाल से टहलना", Telugu: "వేగంగా నడక", Malayalam: "വേഗത്തിലുള്ള നടത്തം" },
     short_walk: { English: "Short walk", Tamil: "சிறு நடை", Hindi: "थोड़ी देर टहलना", Telugu: "కొద్దిసేపు నడక", Malayalam: "ചെറിയ നടത്തം" },

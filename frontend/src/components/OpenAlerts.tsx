@@ -8,6 +8,7 @@ import { useLive } from "@/lib/live";
 import { useStaffLang } from "@/lib/lang";
 import { render, type MessageKey } from "@shared/messages";
 import { when } from "./Glucose";
+import { AlertTrail } from "./AlertTrail";
 
 const KEY: Record<CareAlertView["kind"], MessageKey> = {
   glucose_low: "alert_glucose_low",
@@ -54,9 +55,22 @@ export function OpenAlerts() {
               </p>
               <p className="text-[0.88rem] text-slate">
                 {render(KEY[a.kind], lang, { mgdl: a.data.mgdl ?? "-", low: a.data.low ?? "-", high: a.data.high ?? "-", time: when(a.at) })}
-              </p>
+                              </p>
+              <AlertTrail a={a} max={4} />
             </div>
-            <span className="text-[0.8rem] text-slate">{a.status === "accepted" ? `Accepted by ${a.acceptedBy}` : "Waiting for a helper"}</span>
+            <span
+              className={`self-start rounded-full px-2.5 py-1 text-[0.78rem] font-semibold ${
+                a.status === "accepted" ? "bg-stride-pale text-stride-deep" : a.level === 2 ? "bg-alarm text-white" : a.level === 1 ? "bg-amber-pale text-amber" : "bg-fog text-slate"
+              }`}
+            >
+              {a.status === "accepted"
+                ? `${a.acceptedBy} is going`
+                : a.level === 2
+                  ? "Emergency number shown"
+                  : a.level === 1
+                    ? `With ${a.circle.backup.name} (backup)`
+                    : `Waiting for ${a.circle.primary.name}`}
+            </span>
           </li>
         ))}
       </ul>

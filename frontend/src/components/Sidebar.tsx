@@ -13,11 +13,12 @@ import { IconDatabase, IconFlow, IconGrid, IconLogout, IconMenu, IconShield, Ico
 
 const NAV = [
   { href: "/", label: "Today", Icon: IconTarget },
-    { href: "/members", label: "Members", Icon: IconUsers },
+  { href: "/members", label: "Members", Icon: IconUsers },
+    { href: "/helper", label: "Helper requests", Icon: IconTarget },
   { href: "/community", label: "Community", Icon: IconGrid },
   { href: "/data", label: "Data", Icon: IconDatabase },
   { href: "/how-it-works", label: "How it works", Icon: IconFlow },
-    { href: "/messages", label: "Approved messages", Icon: IconFlow },
+  { href: "/messages", label: "Approved messages", Icon: IconFlow },
   { href: "/security", label: "Privacy & security", Icon: IconShield },
 ];
 

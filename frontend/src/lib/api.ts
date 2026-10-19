@@ -26,6 +26,9 @@ import type {
   GlucoseSummary,
   CareAlert,
   CareAlertView,
+  CareCircle,
+  Helper,
+  VisitReport,
 } from "@shared/types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -84,6 +87,13 @@ export const api = {
   setConsent: (userId: string, status: Consent["status"]) => request<Consent>("/api/consent", json({ userId, status })),
   alerts: () => request<CareAlertView[]>("/api/alerts"),
   askHelp: (userId: string) => request<{ alert: CareAlert; isNew: boolean }>("/api/help", json({ userId })),
+  helpers: () => request<Helper[]>("/api/helpers"),
+  helperAlerts: (helperId: string) => request<CareAlertView[]>(`/api/helpers/${encodeURIComponent(helperId)}/alerts`),
+  circle: (userId: string) => request<{ circle: CareCircle; alerts: CareAlertView[] }>(`/api/circle/${encodeURIComponent(userId)}`),
+  acceptAlert: (id: string, helperId: string) => request<CareAlert>(`/api/alerts/${id}/accept`, json({ helperId })),
+  declineAlert: (id: string, helperId: string) => request<CareAlert>(`/api/alerts/${id}/decline`, json({ helperId })),
+  reportAlert: (id: string, b: { helperId: string; checks: VisitReport["checks"]; recheckMgdl: number | null; note: string }) =>
+  request<CareAlert>(`/api/alerts/${id}/report`, json(b)),
   addGlucose: (userId: string, mgdl: number, kind: GlucoseKind) =>
   request<{ reading: GlucoseReading; summary: GlucoseSummary }>("/api/glucose", json({ userId, mgdl, kind })),
   setGlucoseLimits: (userId: string, low: number, high: number) =>
