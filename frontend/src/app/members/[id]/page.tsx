@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { useLive } from "@/lib/live";
 import { useAuth } from "@/lib/auth";
 import { MemberCard, STATUS } from "@/components/MemberCard";
+import { GlucosePanel } from "@/components/Glucose";
 
 const KIND = { call: "Called", visit: "Visited", plan_sent: "Plan sent", device_check: "Watch checked" } as const;
 const fmt = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
@@ -124,6 +125,8 @@ export default function MemberPage() {
         </div>
       </section>
 
+      {d.glucose && <GlucosePanel key={`${d.glucose.limits.low}-${d.glucose.limits.high}`} userId={userId} g={d.glucose} isAdmin={user?.role === "admin"} onChanged={() => setReload((n) => n + 1)} />}
+        
       <div>
         <h2 className="mb-3 text-[0.8rem] font-bold uppercase tracking-[0.1em] text-slate">
           This week · {fmt(m.weekStart)} to {fmt(m.weekEnd)}

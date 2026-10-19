@@ -20,6 +20,7 @@ import { communitySummary, communityView } from "../programme/community.js";
 import { applyCheckIn, clearCheckIns, recentCheckIn, recordCheckIn } from "../programme/checkins.js";
 import { eraseMember } from "../programme/erasure.js";
 import { applyConsent, clearConsents, consentOf, hasConsent, recordConsent } from "../programme/consent.js";
+import { VALID_RANGE, applyGlucose, clearGlucose, glucoseSummary, recordReading, seedDemoGlucose, setLimits } from "../programme/glucose.js";
 import { profilesFor } from "../programme/profiles.js";
 import { dateRange as range } from "../analytics/metrics.js";import {
   SESSION_COOKIE,
@@ -131,6 +132,7 @@ api.post("/reset-stream", requireIngestKey, (_req, res) => {
   clearActions();
   clearCheckIns();
   clearConsents();
+  clearGlucose();
   markAlertsSeen([], true);
   emitStreamUpdate({ batches: [], newAlerts: [], reset: true });
   store.addAudit({ user: "ingest-api", action: "reset", detail: "data cleared before replay" });
@@ -197,6 +199,7 @@ api.post("/demo/load", requireRole("admin"), async (req, res, next) => {
     }
     markAlertsSeen(detectAnomalies(completedDays(store.allRecords()), {}));
     emitStreamUpdate({ batches, newAlerts: [] });
+    seedDemoGlucose([...new Set(store.allRecords().map((r) => r.userId))]);
     store.addAudit({ user: req.user!.username, action: "load_dataset", detail: `loaded ${pick.label}` });
     res.json({ batches, dataset: pick.label });
   } catch (e) {
@@ -209,6 +212,7 @@ api.post("/reset", requireRole("admin"), (req, res) => {
   clearActions();
   clearCheckIns();
   clearConsents();
+  clearGlucose();
   markAlertsSeen([], true);
   emitStreamUpdate({ batches: [], newAlerts: [], reset: true });
   store.addAudit({ user: req.user!.username, action: "reset", detail: "all data cleared" });
@@ -255,7 +259,7 @@ api.get("/overview", (req, res, next) => {
 
 api.get("/today", (_req, res) => {
   const recs = completedDays(store.allRecords());
-  const view = todayView(recs, (w) => applyConsent(applyCheckIn(w)));
+  const view = todayView(recs, (w) => applyGlucose(applyConsent(applyCheckIn(w))));
   const names = new Map([...profilesFor([...new Set(recs.map((r) => r.userId))]).values()].map((p) => [p.userId, p.name]));
   res.json(withActions(view, recs, names));
 });
@@ -315,6 +319,7 @@ api.get("/member-app/:userId", (req, res, next) => {
       message: sent ? { text: sent.note, from: sent.by, at: sent.at } : null,
       todayCheckIn: recentCheckIn(userId),
       consent: consentOf(userId),
+      glucose: glucoseSummary(userId),
     });
   } catch (e) {
     next(e);
@@ -329,6 +334,51 @@ api.post("/consent", (req, res, next) => {
     store.addAudit({ user: req.user!.username, action: status === "given" ? "consent_given" : "consent_withdrawn", detail: `${userId} ${status === "given" ? "gave" : "withdrew"} consent` });
     emitChange();
     res.json(c);
+  } catch (e) {
+    next(e);
+  }
+});
+
+
+const GlucoseSchema = z.object({
+  userId: z.string().min(1).max(64),
+  mgdl: z.number().int().min(VALID_RANGE.min).max(VALID_RANGE.max),
+  kind: z.enum(["fasting", "post_meal", "random"]),
+});
+
+/** A blood glucose reading, entered on the member's phone (or by a helper on a visit). */
+api.post("/glucose", (req, res, next) => {
+  try {
+    const parsed = GlucoseSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: `Enter a reading between ${VALID_RANGE.min} and ${VALID_RANGE.max} mg/dL.` });
+      return;
+    }
+    const body = parsed.data;
+    if (!hasConsent(body.userId)) {
+      res.status(403).json({ error: "Readings are off because consent was withdrawn." });
+      return;
+    }
+    const r = recordReading({ ...body, source: req.user!.role === "admin" ? "helper" : "patient" });
+    store.addAudit({ user: req.user!.username, action: "glucose_reading", detail: `${body.userId} reading recorded` });
+    emitChange();
+    res.json({ reading: r, summary: glucoseSummary(body.userId) });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** The care team sets a person's low and high alert levels. Admin only, logged. */
+api.put("/glucose/:userId/limits", requireRole("admin"), (req, res, next) => {
+  try {
+    const userId = String(req.params.userId).slice(0, 64);
+    const { low, high } = z
+      .object({ low: z.number().int().min(40).max(120), high: z.number().int().min(140).max(400) })
+      .parse(req.body);
+    const l = setLimits(userId, low, high);
+    store.addAudit({ user: req.user!.username, action: "glucose_limits", detail: `${userId} alert levels set by care team` });
+    emitChange();
+    res.json(l);
   } catch (e) {
     next(e);
   }
@@ -378,7 +428,7 @@ api.delete("/members/:userId", requireRole("admin"), (req, res) => {
 /** All members, most urgent first, each with their latest contact. */
 api.get("/members", (_req, res) => {
   const recs = completedDays(store.allRecords());
-  const weeks = allMemberWeeks(recs, (w) => applyConsent(applyCheckIn(w)));
+  const weeks = allMemberWeeks(recs, (w) => applyGlucose(applyConsent(applyCheckIn(w))));
   const names = new Map(weeks.map((w) => [w.profile.userId, w.profile.name]));
   const view = withActions({ asOf: null, counts: { needs_support: 0, slipping: 0, check_device: 0, needs_rest: 0, on_track: 0 }, priorities: weeks, community: { metGoalPct: 0, previousMetGoalPct: null, members: 0 } }, recs, names);
   res.json(view.priorities);
@@ -394,7 +444,7 @@ api.get("/members/:userId", (req, res, next) => {
     if (!recs.length || !max) throw new IngestionError("No data for this member.");
     const profile = profilesFor([...new Set(all.map((r) => r.userId))]).get(userId)!;
     const d = memberDetail(recs, profile, max);
-    res.json({ ...d, member: applyConsent(applyCheckIn(d.member)), actions: actionsFor(userId, recs) });
+    res.json({ ...d, member: applyGlucose(applyConsent(applyCheckIn(d.member))), actions: actionsFor(userId, recs), glucose: glucoseSummary(userId) });
   } catch (e) {
     next(e);
   }

@@ -6,6 +6,7 @@ import { store } from "../store/memoryStore.js";
 import { deleteActionsFor } from "./actions.js";
 import { deleteCheckInsFor } from "./checkins.js";
 import { deleteConsentFor } from "./consent.js";
+import { deleteGlucoseFor } from "./glucose.js"
 
 /**
  * Right to erasure. Deleting a member removes everything stored about them, and their
@@ -36,6 +37,7 @@ export function eraseMember(userId: string) {
   const contacts = deleteActionsFor(userId);
   const checkIns = deleteCheckInsFor(userId);
   deleteConsentFor(userId);
+  deleteGlucoseFor(userId);
   erased.add(userId);
   save();
   return { records, insights, contacts, checkIns };

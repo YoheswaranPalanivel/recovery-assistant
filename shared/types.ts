@@ -227,6 +227,7 @@ export type MemberWeek = {
   lastAction?: MemberAction | null; // the health worker's latest contact, with its outcom
   checkIn?: CheckIn | null; // the member's check-in in the last 24 hours
   consent?: Consent | null; // the member's current consent
+  glucose?: GlucoseSummary | null; // latest blood glucose and the last 14 days
   status: MemberStatus;
   reasons: string[]; // plain-language reasons, each backed by a figure
   goals: GoalProgress[];
@@ -321,6 +322,7 @@ export type MemberDetail = {
   history: WeekSummary[]; // oldest first, up to 4 weeks
   streak: number; // active days in a row up to the latest day
   actions: MemberAction[]; // newest first, each with its outcome
+  glucose?: GlucoseSummary;
 };
 
 
@@ -366,10 +368,38 @@ export type MemberApp = {
   message: { text: string; from: string; at: string } | null; // latest plan sent by the health worker
   todayCheckIn: CheckIn | null;
   consent: Consent;
+  glucose: GlucoseSummary;
 };
 
 export type Consent = {
   status: "given" | "withdrawn";
   at: string | null;
   source: "enrolment" | "member" | "health_worker";
+};
+
+
+
+// ---------- Blood glucose ----------
+
+export type GlucoseKind = "fasting" | "post_meal" | "random";
+
+export type GlucoseReading = {
+  id: string;
+  userId: string;
+  at: string; // when it was measured
+  mgdl: number; // blood glucose in mg/dL
+  kind: GlucoseKind;
+  source: "patient" | "helper" | "device" | "demo";
+};
+
+/** Low and high alert levels for one person, set by their care team (doctor or clinic). */
+export type GlucoseLimits = { low: number; high: number; setBy: "care_team" | "default"; at: string | null };
+
+export type GlucoseBand = "low" | "in_range" | "high";
+
+export type GlucoseSummary = {
+  latest: (GlucoseReading & { band: GlucoseBand }) | null;
+  limits: GlucoseLimits;
+  readings: GlucoseReading[]; // last 14 days, oldest first
+  last7: { count: number; low: number; high: number; inRangePct: number | null };
 };

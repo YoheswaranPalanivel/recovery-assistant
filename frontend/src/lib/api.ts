@@ -20,6 +20,10 @@ import type {
   MemberApp,
   CheckIn,
   Consent,
+  GlucoseKind,
+  GlucoseLimits,
+  GlucoseReading,
+  GlucoseSummary,
 } from "@shared/types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -76,6 +80,10 @@ export const api = {
   plan: (userId: string) => request<CarePlan>("/api/plan", json({ userId })),
   members: () => request<MemberWeek[]>("/api/members"),
   setConsent: (userId: string, status: Consent["status"]) => request<Consent>("/api/consent", json({ userId, status })),
+  addGlucose: (userId: string, mgdl: number, kind: GlucoseKind) =>
+  request<{ reading: GlucoseReading; summary: GlucoseSummary }>("/api/glucose", json({ userId, mgdl, kind })),
+  setGlucoseLimits: (userId: string, low: number, high: number) =>
+  request<GlucoseLimits>(`/api/glucose/${encodeURIComponent(userId)}/limits`, { ...json({ low, high }), method: "PUT" }),
   memberApp: (userId: string) => request<MemberApp>(`/api/member-app/${encodeURIComponent(userId)}`),
   checkIn: (b: { userId: string; mood: CheckIn["mood"]; medicineTaken: boolean | null }) => request<CheckIn>("/api/checkins", json(b)),
   community: () => request<CommunityView>("/api/community"),

@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { ActionKind, CarePlan, MemberAction, MemberStatus, MemberWeek } from "@shared/types";
 import { api } from "@/lib/api";
 import { IconSparkle } from "./icons";
+import { GlucoseChip } from "./Glucose";
 
 export const STATUS: Record<MemberStatus, { label: string; badge: string; avatar: string }> = {
   needs_support: { label: "Needs support", badge: "bg-alarm-pale text-alarm", avatar: "#C2410C" },
@@ -113,6 +114,7 @@ export function MemberCard({ m, onChanged }: { m: MemberWeek; onChanged?: () => 
           ))}
         </ul>
 
+        <GlucoseChip g={m.glucose} />
         {m.checkIn && (
           <p className={`mt-2 inline-flex items-center gap-2 rounded-lg px-2.5 py-1 text-[0.82rem] font-semibold ${m.checkIn.mood === "not_well" ? "bg-alarm-pale text-alarm" : "bg-stride-pale text-stride-deep"}`}>
             📱 Check-in {new Date(m.checkIn.at).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}:{" "}

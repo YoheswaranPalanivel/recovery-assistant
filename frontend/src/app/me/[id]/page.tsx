@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import type { CheckIn, MemberApp } from "@shared/types";
 import { api } from "@/lib/api";
 import { useLive } from "@/lib/live";
+import { PhoneGlucose } from "@/components/Glucose";
 
 const DOT: Record<string, string> = { none: "#EEF3F2", low: "#E8892B", some: "#F7C978", good: "#7FD6C6", great: "#0E9F8E" };
 const DAY = ["S", "M", "T", "W", "T", "F", "S"];
@@ -117,6 +118,7 @@ export default function MemberPhone() {
 
             {d.consent.status === "given" ? (
               <>
+                <PhoneGlucose userId={userId} g={d.glucose} tamil={tamil} onSaved={() => api.memberApp(userId).then(setD)} />
                 {d.message && (
                   <div className="rounded-3xl bg-paper p-4">
                     <p className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-slate">{t("From your health worker", "உங்கள் சுகாதார பணியாளரிடமிருந்து")}</p>
@@ -200,7 +202,7 @@ export default function MemberPhone() {
             <div className="rounded-3xl bg-paper p-4">
               <p className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-slate">{t("Your data, your choice", "உங்கள் தரவு, உங்கள் விருப்பம்")}</p>
               <ul className="mt-2 space-y-1 text-[0.85rem]">
-                <li>• {t("Your steps, sleep and check-ins are shared with your health worker.", "உங்கள் நடை, தூக்கம், பதிவுகள் உங்கள் சுகாதார பணியாளருக்கு மட்டும் தெரியும்.")}</li>
+                <li>• {t("Your blood sugar, steps, sleep and check-ins are shared with your health worker.", "உங்கள் சர்க்கரை அளவு, நடை, தூக்கம், பதிவுகள் உங்கள் சுகாதார பணியாளருக்கு மட்டும் தெரியும்.")}</li>
                 <li>• {t("AI suggestions never see your name.", "AI பரிந்துரைகளுக்கு உங்கள் பெயர் தெரியாது.")}</li>
                 <li>• {t("You can stop at any time.", "எப்போது வேண்டுமானாலும் நிறுத்தலாம்.")}</li>
               </ul>
