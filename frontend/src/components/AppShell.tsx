@@ -21,7 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
     // the member's phone view is shown on its own, without the staff sidebar
-  if (path.startsWith("/me/")) return <LiveProvider>{children}</LiveProvider>;
+  if (path.startsWith("/me/") || path.startsWith("/family/")) return <LiveProvider>{children}</LiveProvider>;
   
   return (
     <LiveProvider>

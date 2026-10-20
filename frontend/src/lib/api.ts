@@ -29,6 +29,7 @@ import type {
   CareCircle,
   Helper,
   VisitReport,
+  FamilyView
 } from "@shared/types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -87,6 +88,8 @@ export const api = {
   setConsent: (userId: string, status: Consent["status"]) => request<Consent>("/api/consent", json({ userId, status })),
   alerts: () => request<CareAlertView[]>("/api/alerts"),
   askHelp: (userId: string) => request<{ alert: CareAlert; isNew: boolean }>("/api/help", json({ userId })),
+  family: (userId: string) => request<FamilyView>(`/api/family/${encodeURIComponent(userId)}`),
+  familyRequest: (userId: string) => request<{ alert: CareAlert; isNew: boolean }>(`/api/family/${encodeURIComponent(userId)}/request`, json({})),
   helpers: () => request<Helper[]>("/api/helpers"),
   helperAlerts: (helperId: string) => request<CareAlertView[]>(`/api/helpers/${encodeURIComponent(helperId)}/alerts`),
   circle: (userId: string) => request<{ circle: CareCircle; alerts: CareAlertView[] }>(`/api/circle/${encodeURIComponent(userId)}`),

@@ -38,12 +38,14 @@ const SEVERITY: Record<CareAlertKind, CareAlert["severity"]> = {
   help: "urgent",
   glucose_high: "attention",
   not_well: "attention",
+  family_request: "attention",
 };
 const WHAT: Record<CareAlertKind, string> = {
   glucose_low: "low blood sugar",
   glucose_high: "high blood sugar",
   not_well: "not feeling well",
   help: "asked for help",
+  family_request: "family asked for someone to check on them",
 };
 
 const event = (a: CareAlert, kind: AlertEvent["kind"], text: string) => a.timeline.push({ at: new Date().toISOString(), kind, text });

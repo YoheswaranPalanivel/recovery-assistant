@@ -15,6 +15,13 @@ const NAMES: Record<MessageKey, string> = {
   alert_not_well: "Alert: not feeling well (to staff and family)",
   alert_help: "Alert: asked for help (to staff and family)",
   help_sent_patient: "Help request received (to the patient)",
+  alert_family_request: "Alert: family asked for a check-in (to staff and family)",
+  fam_waiting: "Helper asked (to family)",
+  fam_on_way: "Helper on the way (to family)",
+  fam_call_now: "Nobody accepted yet, please call (to family)",
+  fam_emergency: "Still nobody, emergency number (to family)",
+  fam_all_ok: "No alerts (to family)",
+  fam_ask_button: "Ask for a check-in button (to family)",
 };
 
 /** Every message a patient can receive, in every language, with its review status. */

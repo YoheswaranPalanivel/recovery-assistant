@@ -372,6 +372,51 @@ api.get("/alerts", (_req, res) => {
   res.json(alertViews(activeAlerts()));
 });
 
+/**
+ * What a family member far away sees: only if the member shared with family and hasn't withdrawn
+ * consent. Demo: opened by staff; a real family app would have its own sign-in, invited by the member.
+ */
+api.get("/family/:userId", (req, res, next) => {
+  try {
+    const userId = String(req.params.userId).slice(0, 64);
+    const profiles = profilesFor([...new Set(store.allRecords().map((r) => r.userId))]);
+    const p = profiles.get(userId);
+    if (!p) throw new IngestionError("No data for this member.");
+    const c = circleFor(userId);
+    const sharing = Boolean(c.family) && hasConsent(userId);
+    const mine = alertViews(alertsFor(userId));
+    res.json({
+      name: p.name,
+      family: c.family,
+      sharing,
+      glucose: sharing ? glucoseSummary(userId) : null,
+      checkIn: sharing ? recentCheckIn(userId) : null,
+      alert: sharing ? (mine.find((a) => a.status !== "resolved") ?? null) : null,
+      reports: sharing ? mine.filter((a) => a.report).slice(0, 5) : [],
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** The family asks for someone to check on the member: it goes to their helper like any other alert. */
+api.post("/family/:userId/request", (req, res, next) => {
+  try {
+    const userId = String(req.params.userId).slice(0, 64);
+    const c = circleFor(userId);
+    if (!c.family || !hasConsent(userId)) {
+      res.status(403).json({ error: "This member hasn't shared with family." });
+      return;
+    }
+    const { alert, isNew } = raiseAlert(userId, "family_request");
+    store.addAudit({ user: req.user!.username, action: "family_request", detail: `${userId}: family asked for a check-in` });
+    emitChange();
+    res.json({ alert, isNew });
+  } catch (e) {
+    next(e);
+  }
+});
+
 /** Demo helpers, so staff can act as one on the helper page. */
 api.get("/helpers", (_req, res) => res.json(HELPERS));
 

@@ -13,6 +13,7 @@ const KEY: Record<CareAlertView["kind"], MessageKey> = {
   glucose_high: "alert_glucose_high",
   not_well: "alert_not_well",
   help: "alert_help",
+  family_request: "alert_family_request",
 };
 const EMPTY: VisitReport["checks"] = { seen: false, talking: false, plan_followed: false, care_team_told: false, ambulance: false };
 
@@ -121,7 +122,7 @@ export default function HelperPage() {
                   </span>
                 </p>
                 <p className="mt-0.5 text-[0.95rem]">
-                  {render(KEY[a.kind], helper.language, { mgdl: a.data.mgdl ?? "-", low: a.data.low ?? "-", high: a.data.high ?? "-", time: when(a.at) })}
+                  {render(KEY[a.kind], helper.language, { mgdl: a.data.mgdl ?? "-", low: a.data.low ?? "-", high: a.data.high ?? "-", time: when(a.at), family: a.circle.family?.name ?? "Family" })}
                 </p>
                 <p className="text-[0.82rem] text-slate">
                   {a.circle.primary.area} · speaks {a.language}

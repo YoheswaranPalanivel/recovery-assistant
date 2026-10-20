@@ -409,7 +409,7 @@ export type GlucoseSummary = {
 
 // ---------- Care alerts: risks that need someone to respond now ----------
 
-export type CareAlertKind = "glucose_low" | "glucose_high" | "not_well" | "help";
+export type CareAlertKind = "glucose_low" | "glucose_high" | "not_well" | "help" | "family_request";
 
 export type CareAlert = {
   id: string;
@@ -455,3 +455,15 @@ export type CareCircle = {
 };
 
 export type CareAlertView = CareAlert & { name: string; language: string; circle: CareCircle };
+
+
+
+export type FamilyView = {
+  name: string; 
+  family: FamilyContact | null;
+  sharing: boolean; 
+  glucose: GlucoseSummary | null;
+  checkIn: CheckIn | null;
+  alert: CareAlertView | null;
+  reports: CareAlertView[];
+};

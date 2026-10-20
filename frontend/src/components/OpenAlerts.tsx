@@ -15,8 +15,9 @@ const KEY: Record<CareAlertView["kind"], MessageKey> = {
   glucose_high: "alert_glucose_high",
   not_well: "alert_not_well",
   help: "alert_help",
+  family_request: "alert_family_request",
 };
-const ICON: Record<CareAlertView["kind"], string> = { glucose_low: "🩸", glucose_high: "🩸", not_well: "😟", help: "🆘" };
+const ICON: Record<CareAlertView["kind"], string> = { glucose_low: "🩸", glucose_high: "🩸", not_well: "😟", help: "🆘", family_request: "👨‍👩‍👦" };
 
 /** Alerts that need someone to respond now, at the top of the Today page. Text is from approved templates. */
 export function OpenAlerts() {
@@ -54,7 +55,7 @@ export function OpenAlerts() {
                 </span>
               </p>
               <p className="text-[0.88rem] text-slate">
-                {render(KEY[a.kind], lang, { mgdl: a.data.mgdl ?? "-", low: a.data.low ?? "-", high: a.data.high ?? "-", time: when(a.at) })}
+                {render(KEY[a.kind], lang, { mgdl: a.data.mgdl ?? "-", low: a.data.low ?? "-", high: a.data.high ?? "-", time: when(a.at), family: a.circle.family?.name ?? "Family" })}
                               </p>
               <AlertTrail a={a} max={4} />
             </div>

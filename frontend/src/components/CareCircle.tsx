@@ -33,6 +33,13 @@ export function CareCirclePanel({ userId }: { userId: string }) {
         {row("1. Helper nearby", `${c.primary.name} · ${c.primary.area} · ${c.primary.language}`)}
         {row("2. Backup helper", `${c.backup.name} · ${c.backup.area} · ${c.backup.language}`)}
         {row("Family (shared with consent)", c.family ? `${c.family.name}, ${c.family.relation} · ${c.family.place} · ${c.family.language}` : "Not shared")}
+        {c.family && (
+          <li className="py-1.5 text-right">
+            <a href={`/family/${encodeURIComponent(userId)}`} target="_blank" rel="noreferrer" className="text-[0.85rem] font-semibold text-brand hover:underline">
+              👨‍👩‍👦 Open family view (what {c.family.name} sees on their phone) ↗
+            </a>
+          </li>
+        )}
         {row("Care team", `${c.careTeam.name} · ${c.careTeam.language}`)}
       </ul>
       {d.alerts.length > 0 && (
