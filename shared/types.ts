@@ -370,6 +370,7 @@ export type MemberApp = {
   todayCheckIn: CheckIn | null;
   consent: Consent;
   glucose: GlucoseSummary;
+  medicines: MedicinesView;
 };
 
 export type Consent = {
@@ -466,4 +467,31 @@ export type FamilyView = {
   checkIn: CheckIn | null;
   alert: CareAlertView | null;
   reports: CareAlertView[];
+  medicines: MedicinesView | null;
 };
+
+
+
+
+
+// ---------- Medicines: shown exactly as the doctor prescribed ----------
+
+export type DoseSlot = "morning" | "afternoon" | "night";
+
+export type Medicine = {
+  id: string;
+  userId: string;
+  name: string; // as written by the doctor, never translated
+  strength: { value: number; unit: "mg" | "g" | "mcg" | "ml" | "units" };
+  dose: { count: number; unit: "tablet" | "capsule" | "units" | "ml" };
+  times: DoseSlot[];
+  food: "before" | "after" | "any";
+  prescribedBy: string;
+  at: string; // when it was entered
+  active: boolean;
+  demo: boolean;
+};
+
+export type DoseStatus = { medicineId: string; slot: DoseSlot; takenAt: string | null };
+
+export type MedicinesView = { medicines: Medicine[]; today: DoseStatus[] };

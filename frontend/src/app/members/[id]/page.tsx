@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth";
 import { MemberCard, STATUS } from "@/components/MemberCard";
 import { GlucosePanel } from "@/components/Glucose";
 import { CareCirclePanel } from "@/components/CareCircle";
+import { MedicinesPanel } from "@/components/Medicines";
 
 const KIND = { call: "Called", visit: "Visited", plan_sent: "Plan sent", device_check: "Watch checked" } as const;
 const fmt = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
@@ -127,6 +128,7 @@ export default function MemberPage() {
       </section>
 
       <CareCirclePanel userId={userId} />
+      <MedicinesPanel userId={userId} isAdmin={user?.role === "admin"} defaultDoctor="Dr. Sharma, City Diabetes Clinic" />
       {d.glucose && <GlucosePanel key={`${d.glucose.limits.low}-${d.glucose.limits.high}`} userId={userId} g={d.glucose} isAdmin={user?.role === "admin"} onChanged={() => setReload((n) => n + 1)} />}
         
       <div>

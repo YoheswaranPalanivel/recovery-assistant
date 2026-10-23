@@ -8,6 +8,7 @@ import { deleteCheckInsFor } from "./checkins.js";
 import { deleteConsentFor } from "./consent.js";
 import { deleteGlucoseFor } from "./glucose.js";
 import { deleteAlertsFor } from "./alerts.js";
+import { deleteMedicinesFor } from "./medicines.js"
 
 /**
  * Right to erasure. Deleting a member removes everything stored about them, and their

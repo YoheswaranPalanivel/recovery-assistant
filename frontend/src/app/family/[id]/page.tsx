@@ -8,6 +8,7 @@ import { useLive } from "@/lib/live";
 import { LABELS, UI, render, type Lang, type MessageKey } from "@shared/messages";
 import { when } from "@/components/Glucose";
 import { ReportView } from "@/components/AlertTrail";
+import { FamilyMeds } from "@/components/Medicines";
 
 const KEY: Record<CareAlertView["kind"], MessageKey> = {
   glucose_low: "alert_glucose_low",
@@ -116,6 +117,8 @@ export default function FamilyPhone() {
                     </p>
                   </div>
                 )}
+
+                {d.medicines && <FamilyMeds v={d.medicines} lang={lang} />}
 
                 {d.checkIn && (
                   <div className="rounded-3xl bg-paper p-4">

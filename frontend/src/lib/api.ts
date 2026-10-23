@@ -29,7 +29,10 @@ import type {
   CareCircle,
   Helper,
   VisitReport,
-  FamilyView
+  FamilyView,
+  Medicine,
+  MedicinesView,
+  DoseSlot,
 } from "@shared/types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -90,6 +93,10 @@ export const api = {
   askHelp: (userId: string) => request<{ alert: CareAlert; isNew: boolean }>("/api/help", json({ userId })),
   family: (userId: string) => request<FamilyView>(`/api/family/${encodeURIComponent(userId)}`),
   familyRequest: (userId: string) => request<{ alert: CareAlert; isNew: boolean }>(`/api/family/${encodeURIComponent(userId)}/request`, json({})),
+  medicines: (userId: string) => request<MedicinesView>(`/api/medicines/${encodeURIComponent(userId)}`),
+  addMedicine: (b: Omit<Medicine, "id" | "at" | "active" | "demo">) => request<Medicine>("/api/medicines", json(b)),
+  stopMedicine: (id: string) => request<Medicine>(`/api/medicines/${id}/stop`, json({})),
+  markTaken: (id: string, userId: string, slot: DoseSlot) => request<unknown>(`/api/medicines/${id}/taken`, json({ userId, slot })),
   helpers: () => request<Helper[]>("/api/helpers"),
   helperAlerts: (helperId: string) => request<CareAlertView[]>(`/api/helpers/${encodeURIComponent(helperId)}/alerts`),
   circle: (userId: string) => request<{ circle: CareCircle; alerts: CareAlertView[] }>(`/api/circle/${encodeURIComponent(userId)}`),

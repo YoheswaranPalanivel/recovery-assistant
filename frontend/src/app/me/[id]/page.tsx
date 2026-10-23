@@ -6,6 +6,7 @@ import type { CheckIn, MemberApp } from "@shared/types";
 import { api } from "@/lib/api";
 import { useLive } from "@/lib/live";
 import { PhoneGlucose } from "@/components/Glucose";
+import { PhoneMeds } from "@/components/Medicines"
 import { UI, asLang, render } from "@shared/messages";
 
 const DOT: Record<string, string> = { none: "#EEF3F2", low: "#E8892B", some: "#F7C978", good: "#7FD6C6", great: "#0E9F8E" };
@@ -138,6 +139,7 @@ export default function MemberPhone() {
             {d.consent.status === "given" ? (
               <>
                 <PhoneGlucose userId={userId} g={d.glucose} tamil={tamil} onSaved={() => api.memberApp(userId).then(setD)} />
+                <PhoneMeds userId={userId} v={d.medicines} lang={asLang(d.language)} onChanged={() => api.memberApp(userId).then(setD)} />
                 {d.message && (
                   <div className="rounded-3xl bg-paper p-4">
                     <p className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-slate">{t("From your health worker", "உங்கள் சுகாதார பணியாளரிடமிருந்து")}</p>

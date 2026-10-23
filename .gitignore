@@ -22,3 +22,4 @@ backend/data/consents.json
 backend/data/glucose.json
 backend/data/alerts.json
 backend/data/*.tmp
+backend/data/medicines.json

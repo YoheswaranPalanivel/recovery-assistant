@@ -23,6 +23,7 @@ import { applyConsent, clearConsents, consentOf, hasConsent, recordConsent } fro
 import { VALID_RANGE, applyGlucose, bandOf, clearGlucose, glucoseSummary, limitsFor, recordReading, seedDemoGlucose, setLimits } from "../programme/glucose.js";
 import { acceptAlert, activeAlerts, alertsFor, alertsForHelper, clearAlerts, declineAlert, raiseAlert, reportAlert } from "../programme/alerts.js";
 import { HELPERS, circleFor } from "../programme/circle.js";
+import { addMedicine, clearMedicines, markTaken, medicinesView, seedDemoMedicines, stopMedicine } from "../programme/medicines.js";
 import { profilesFor } from "../programme/profiles.js";
 import { dateRange as range } from "../analytics/metrics.js";import {
   SESSION_COOKIE,
@@ -136,6 +137,7 @@ api.post("/reset-stream", requireIngestKey, (_req, res) => {
   clearConsents();
   clearGlucose();
   clearAlerts();
+  clearMedicines();
   markAlertsSeen([], true);
   emitStreamUpdate({ batches: [], newAlerts: [], reset: true });
   store.addAudit({ user: "ingest-api", action: "reset", detail: "data cleared before replay" });
@@ -203,6 +205,8 @@ api.post("/demo/load", requireRole("admin"), async (req, res, next) => {
     markAlertsSeen(detectAnomalies(completedDays(store.allRecords()), {}));
     emitStreamUpdate({ batches, newAlerts: [] });
     seedDemoGlucose([...new Set(store.allRecords().map((r) => r.userId))]);
+    const loaded = profilesFor([...new Set(store.allRecords().map((r) => r.userId))]);
+    seedDemoMedicines([...loaded.values()].map((p) => ({ userId: p.userId, condition: p.condition, prescribedBy: circleFor(p.userId).careTeam.name })));
     store.addAudit({ user: req.user!.username, action: "load_dataset", detail: `loaded ${pick.label}` });
     res.json({ batches, dataset: pick.label });
   } catch (e) {
@@ -217,6 +221,7 @@ api.post("/reset", requireRole("admin"), (req, res) => {
   clearConsents();
   clearGlucose();
   clearAlerts();
+  clearMedicines();
   markAlertsSeen([], true);
   emitStreamUpdate({ batches: [], newAlerts: [], reset: true });
   store.addAudit({ user: req.user!.username, action: "reset", detail: "all data cleared" });
@@ -324,6 +329,7 @@ api.get("/member-app/:userId", (req, res, next) => {
       todayCheckIn: recentCheckIn(userId),
       consent: consentOf(userId),
       glucose: glucoseSummary(userId),
+      medicines: medicinesView(userId),
     });
   } catch (e) {
     next(e);
@@ -393,6 +399,7 @@ api.get("/family/:userId", (req, res, next) => {
       checkIn: sharing ? recentCheckIn(userId) : null,
       alert: sharing ? (mine.find((a) => a.status !== "resolved") ?? null) : null,
       reports: sharing ? mine.filter((a) => a.report).slice(0, 5) : [],
+      medicines: sharing ? medicinesView(userId) : null,
     });
   } catch (e) {
     next(e);
@@ -480,6 +487,59 @@ api.post("/alerts/:id/report", (req, res, next) => {
     next(e);
   }
 });
+
+/** A member's current medicines and today's doses. */
+api.get("/medicines/:userId", (req, res) => {
+  res.json(medicinesView(String(req.params.userId).slice(0, 64)));
+});
+
+const MedicineSchema = z.object({
+  userId: z.string().min(1).max(64),
+  name: z.string().trim().min(2).max(60).regex(/^[\p{L}\p{N} .()+-]+$/u, "Use letters, numbers and spaces only."),
+  strength: z.object({ value: z.number().positive().max(5000), unit: z.enum(["mg", "g", "mcg", "ml", "units"]) }),
+  dose: z.object({ count: z.number().positive().max(100), unit: z.enum(["tablet", "capsule", "units", "ml"]) }),
+  times: z.array(z.enum(["morning", "afternoon", "night"])).min(1).max(3),
+  food: z.enum(["before", "after", "any"]),
+  prescribedBy: z.string().trim().min(2).max(80),
+});
+
+/** The care team enters a prescription. Admin only; the app stores it exactly as entered and logs it. */
+api.post("/medicines", requireRole("admin"), (req, res, next) => {
+  try {
+    const body = MedicineSchema.parse(req.body);
+    const m = addMedicine({ ...body, times: [...new Set(body.times)], demo: false });
+    store.addAudit({ user: req.user!.username, action: "medicine_added", detail: `${body.userId}: prescription entered` });
+    emitChange();
+    res.json(m);
+  } catch (e) {
+    next(e);
+  }
+});
+
+api.post("/medicines/:id/stop", requireRole("admin"), (req, res) => {
+  try {
+    const m = stopMedicine(String(req.params.id));
+    store.addAudit({ user: req.user!.username, action: "medicine_stopped", detail: `${m.userId}: prescription stopped` });
+    emitChange();
+    res.json(m);
+  } catch (e) {
+    res.status(404).json({ error: (e as Error).message });
+  }
+});
+
+/** The member marks a dose as taken. Pressing twice records it once. */
+api.post("/medicines/:id/taken", (req, res) => {
+  try {
+    const { userId, slot } = z.object({ userId: z.string().min(1).max(64), slot: z.enum(["morning", "afternoon", "night"]) }).parse(req.body);
+    const log = markTaken(userId, String(req.params.id), slot);
+    store.addAudit({ user: req.user!.username, action: "dose_taken", detail: `${userId}: ${slot} dose marked taken` });
+    emitChange();
+    res.json(log);
+  } catch (e) {
+    res.status(400).json({ error: (e as Error).message });
+  }
+});
+
 const GlucoseSchema = z.object({
   userId: z.string().min(1).max(64),
   mgdl: z.number().int().min(VALID_RANGE.min).max(VALID_RANGE.max),

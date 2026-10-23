@@ -241,6 +241,11 @@ export const UI = {
   fam_latest: { English: "Latest blood sugar", Tamil: "சமீபத்திய சர்க்கரை அளவு", Hindi: "हाल की शुगर रीडिंग", Telugu: "తాజా చక్కెర రీడింగ్", Malayalam: "ഏറ്റവും പുതിയ പഞ്ചസാര നില" },
   fam_checkin: { English: "Today's check-in", Tamil: "இன்றைய பதிவு", Hindi: "आज की जानकारी", Telugu: "ఈరోజు చెక్-ఇన్", Malayalam: "ഇന്നത്തെ ചെക്ക്-ഇൻ" },
   fam_reports: { English: "Visit reports", Tamil: "வருகை அறிக்கைகள்", Hindi: "मुलाक़ात रिपोर्ट", Telugu: "సందర్శన నివేదికలు", Malayalam: "സന്ദർശന റിപ്പോർട്ടുകൾ" },
+  meds_title: { English: "Your medicines, exactly as your doctor prescribed", Tamil: "உங்கள் மருந்துகள், மருத்துவர் எழுதியபடியே", Hindi: "आपकी दवाएँ, ठीक वैसे जैसे डॉक्टर ने लिखी हैं", Telugu: "మీ మందులు, డాక్టర్ రాసినట్లే", Malayalam: "നിങ്ങളുടെ മരുന്നുകൾ, ഡോക്ടർ എഴുതിയതുപോലെ തന്നെ" },
+  meds_mark: { English: "I took it", Tamil: "எடுத்துக்கொண்டேன்", Hindi: "मैंने ले ली", Telugu: "తీసుకున్నాను", Malayalam: "കഴിച്ചു" },
+  meds_taken: { English: "Taken", Tamil: "எடுத்தாயிற்று", Hindi: "ले ली", Telugu: "తీసుకున్నారు", Malayalam: "കഴിച്ചു" },
+  meds_not_yet: { English: "Not yet", Tamil: "இன்னும் இல்லை", Hindi: "अभी नहीं", Telugu: "ఇంకా లేదు", Malayalam: "ഇതുവരെ ഇല്ല" },
+  meds_today: { English: "Medicines today", Tamil: "இன்றைய மருந்துகள்", Hindi: "आज की दवाएँ", Telugu: "ఈరోజు మందులు", Malayalam: "ഇന്നത്തെ മരുന്നുകൾ" },
   fam_not_shared: { English: "Not shared with family", Tamil: "குடும்பத்துடன் பகிரப்படவில்லை", Hindi: "परिवार के साथ साझा नहीं", Telugu: "కుటుంబంతో పంచుకోలేదు", Malayalam: "കുടുംബവുമായി പങ്കിട്ടിട്ടില്ല" },
 } satisfies Record<string, Text>;
 
@@ -255,6 +260,17 @@ export const LABELS = {
     fasting: { English: "Before breakfast", Tamil: "காலை உணவுக்கு முன்", Hindi: "नाश्ते से पहले", Telugu: "అల్పాహారానికి ముందు", Malayalam: "പ്രഭാതഭക്ഷണത്തിന് മുമ്പ്" },
     post_meal: { English: "After a meal", Tamil: "சாப்பிட்ட பின்", Hindi: "खाने के बाद", Telugu: "భోజనం తర్వాత", Malayalam: "ഭക്ഷണത്തിന് ശേഷം" },
     random: { English: "Other time", Tamil: "வேறு நேரம்", Hindi: "अन्य समय", Telugu: "ఇతర సమయం", Malayalam: "മറ്റ് സമയം" },
+  },
+
+  slot: {
+    morning: { English: "Morning", Tamil: "காலை", Hindi: "सुबह", Telugu: "ఉదయం", Malayalam: "രാവിലെ" },
+    afternoon: { English: "Afternoon", Tamil: "மதியம்", Hindi: "दोपहर", Telugu: "మధ్యాహ్నం", Malayalam: "ഉച്ചയ്ക്ക്" },
+    night: { English: "Night", Tamil: "இரவு", Hindi: "रात", Telugu: "రాత్రి", Malayalam: "രാത്രി" },
+  },
+  food: {
+    before: { English: "Before food", Tamil: "சாப்பிடுவதற்கு முன்", Hindi: "खाने से पहले", Telugu: "భోజనానికి ముందు", Malayalam: "ഭക്ഷണത്തിന് മുമ്പ്" },
+    after: { English: "After food", Tamil: "சாப்பிட்ட பின்", Hindi: "खाने के बाद", Telugu: "భోజనం తర్వాత", Malayalam: "ഭക്ഷണത്തിന് ശേഷം" },
+    any: { English: "With or without food", Tamil: "உணவுடனோ இல்லாமலோ", Hindi: "खाने के साथ या बिना", Telugu: "ఆహారంతో లేదా లేకుండా", Malayalam: "ഭക്ഷണത്തോടെയോ അല്ലാതെയോ" },
   },
 
   mood: {
