@@ -97,8 +97,8 @@ export const api = {
   declineAlert: (id: string, helperId: string) => request<CareAlert>(`/api/alerts/${id}/decline`, json({ helperId })),
   reportAlert: (id: string, b: { helperId: string; checks: VisitReport["checks"]; recheckMgdl: number | null; note: string }) =>
   request<CareAlert>(`/api/alerts/${id}/report`, json(b)),
-  addGlucose: (userId: string, mgdl: number, kind: GlucoseKind) =>
-  request<{ reading: GlucoseReading; summary: GlucoseSummary }>("/api/glucose", json({ userId, mgdl, kind })),
+  addGlucose: (userId: string, mgdl: number, kind: GlucoseKind, via: "meter" | "typed" = "typed") =>
+  request<{ reading: GlucoseReading; summary: GlucoseSummary }>("/api/glucose", json({ userId, mgdl, kind, via })),
   setGlucoseLimits: (userId: string, low: number, high: number) =>
   request<GlucoseLimits>(`/api/glucose/${encodeURIComponent(userId)}/limits`, { ...json({ low, high }), method: "PUT" }),
   memberApp: (userId: string) => request<MemberApp>(`/api/member-app/${encodeURIComponent(userId)}`),

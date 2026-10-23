@@ -484,6 +484,7 @@ const GlucoseSchema = z.object({
   userId: z.string().min(1).max(64),
   mgdl: z.number().int().min(VALID_RANGE.min).max(VALID_RANGE.max),
   kind: z.enum(["fasting", "post_meal", "random"]),
+  via: z.enum(["meter", "typed"]).default("typed"), // from a glucometer, or typed in
 });
 
 /** A blood glucose reading, entered on the member's phone (or by a helper on a visit). */
@@ -499,7 +500,8 @@ api.post("/glucose", (req, res, next) => {
       res.status(403).json({ error: "Readings are off because consent was withdrawn." });
       return;
     }
-    const r = recordReading({ ...body, source: req.user!.role === "admin" ? "helper" : "patient" });
+    const { via, ...reading } = body;
+    const r = recordReading({ ...reading, source: via === "meter" ? "device" : req.user!.role === "admin" ? "helper" : "patient" });
     store.addAudit({ user: req.user!.username, action: "glucose_reading", detail: `${body.userId} reading recorded` });
     const l = limitsFor(body.userId);
     const band = bandOf(r.mgdl, l);

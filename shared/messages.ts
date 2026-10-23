@@ -230,6 +230,13 @@ export type MessageKey = keyof typeof TEMPLATES;
 
 export const UI = {
   need_help: { English: "I need help", Tamil: "உதவி வேண்டும்", Hindi: "मदद चाहिए", Telugu: "సహాయం కావాలి", Malayalam: "സഹായം വേണം" },
+  meter_check: { English: "Check with meter", Tamil: "மீட்டரில் சோதிக்கவும்", Hindi: "मीटर से जाँचें", Telugu: "మీటర్‌తో పరీక్షించండి", Malayalam: "മീറ്ററിൽ പരിശോധിക്കുക" },
+  meter_connecting: { English: "Connecting to your glucometer…", Tamil: "உங்கள் குளுக்கோமீட்டருடன் இணைக்கிறது…", Hindi: "आपके ग्लूकोमीटर से जुड़ रहा है…", Telugu: "మీ గ్లూకోమీటర్‌కు కనెక్ట్ అవుతోంది…", Malayalam: "നിങ്ങളുടെ ഗ്ലൂക്കോമീറ്ററുമായി ബന്ധിപ്പിക്കുന്നു…" },
+  meter_strip: { English: "Insert a test strip", Tamil: "சோதனை ஸ்ட்ரிப்பைச் செருகவும்", Hindi: "टेस्ट स्ट्रिप लगाएँ", Telugu: "టెస్ట్ స్ట్రిప్ పెట్టండి", Malayalam: "ടെസ്റ്റ് സ്ട്രിപ്പ് ഇടുക" },
+  meter_blood: { English: "Touch a drop of blood to the strip", Tamil: "ஸ்ட்ரிப்பில் ஒரு துளி இரத்தத்தைத் தொடவும்", Hindi: "स्ट्रिप पर खून की एक बूँद लगाएँ", Telugu: "స్ట్రిప్‌కు ఒక చుక్క రక్తం తాకించండి", Malayalam: "സ്ട്രിപ്പിൽ ഒരു തുള്ളി രക്തം തൊടുവിക്കുക" },
+  meter_measuring: { English: "Measuring…", Tamil: "அளவிடுகிறது…", Hindi: "माप रहा है…", Telugu: "కొలుస్తోంది…", Malayalam: "അളക്കുന്നു…" },
+  meter_from: { English: "From meter", Tamil: "மீட்டரிலிருந்து", Hindi: "मीटर से", Telugu: "మీటర్ నుండి", Malayalam: "മീറ്ററിൽ നിന്ന്" },
+  meter_typed: { English: "Typed", Tamil: "தட்டச்சு செய்தது", Hindi: "टाइप किया", Telugu: "టైప్ చేసింది", Malayalam: "ടൈപ്പ് ചെയ്തത്" },
   fam_today: { English: "Right now", Tamil: "இப்போது", Hindi: "अभी", Telugu: "ఇప్పుడు", Malayalam: "ഇപ്പോൾ" },
   fam_latest: { English: "Latest blood sugar", Tamil: "சமீபத்திய சர்க்கரை அளவு", Hindi: "हाल की शुगर रीडिंग", Telugu: "తాజా చక్కెర రీడింగ్", Malayalam: "ഏറ്റവും പുതിയ പഞ്ചസാര നില" },
   fam_checkin: { English: "Today's check-in", Tamil: "இன்றைய பதிவு", Hindi: "आज की जानकारी", Telugu: "ఈరోజు చెక్-ఇన్", Malayalam: "ഇന്നത്തെ ചെക്ക്-ഇൻ" },

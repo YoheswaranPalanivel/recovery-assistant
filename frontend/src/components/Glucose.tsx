@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { GlucoseBand, GlucoseKind, GlucoseSummary } from "@shared/types";
 import { api } from "@/lib/api";
 import { useStaffLang } from "@/lib/lang";
-import { LABELS, render } from "@shared/messages";
+import { LABELS, UI, render } from "@shared/messages";
 
 export const BAND: Record<GlucoseBand, { label: string; ta: string; chip: string; dot: string }> = {
   low: { label: "Low", ta: "குறைவு", chip: "bg-alarm-pale text-alarm", dot: "var(--color-alarm)" },
@@ -97,7 +97,7 @@ export function GlucosePanel({ userId, g, isAdmin, onChanged }: { userId: string
               {g.latest.mgdl} <span className="text-[0.9rem] font-semibold text-slate">mg/dL</span>
             </p>
             <p className="mt-1 text-[0.8rem] text-slate">
-              {LABELS.kind[g.latest.kind][lang]} · {when(g.latest.at)}{" "}
+              {LABELS.kind[g.latest.kind][lang]} · {when(g.latest.at)} · {g.latest.source === "device" ? "📟 from meter" : g.latest.source === "demo" ? "demo" : "⌨️ typed"}{" "}
               <span className={`ml-1 rounded-full px-2 py-0.5 font-bold ${BAND[g.latest.band].chip}`}>{LABELS.band[g.latest.band][lang]}</span>
             </p>
           </div>
@@ -123,7 +123,7 @@ export function GlucosePanel({ userId, g, isAdmin, onChanged }: { userId: string
               const b = r.mgdl < l.low ? "low" : r.mgdl > l.high ? "high" : "in_range";
               return (
                 <circle key={r.id} cx={X(r.at)} cy={Y(r.mgdl)} r={r.kind === "fasting" ? 4.5 : 3.5} fill={BAND[b].dot} fillOpacity={r.kind === "fasting" ? 1 : 0.55}>
-                  <title>{`${r.mgdl} mg/dL, ${KIND[r.kind].label.toLowerCase()}, ${when(r.at)}`}</title>
+                  <title>{`${r.mgdl} mg/dL, ${KIND[r.kind].label.toLowerCase()}, ${when(r.at)}, ${r.source === "device" ? "from meter" : r.source === "demo" ? "demo" : "typed"}`}</title>
                 </circle>
               );
             })}
@@ -193,6 +193,34 @@ export function PhoneGlucose({ userId, g, tamil, onSaved }: { userId: string; g:
   const [kind, setKind] = useState<GlucoseKind>("fasting");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+    // simulated glucometer: in a real app the reading arrives over Bluetooth (the standard Glucose Service)
+  const [meterStep, setMeterStep] = useState<null | "connect" | "strip" | "blood" | "measure">(null);
+  const [count, setCount] = useState(5);
+  const [demoValue, setDemoValue] = useState(58);
+
+  const checkWithMeter = async () => {
+    setErr(null);
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    try {
+      setMeterStep("connect");
+      await wait(1800);
+      setMeterStep("strip");
+      await wait(1800);
+      setMeterStep("blood");
+      await wait(1800);
+      setMeterStep("measure");
+      for (let n = 5; n >= 1; n--) {
+        setCount(n);
+        await wait(700);
+      }
+      await api.addGlucose(userId, demoValue, kind, "meter");
+      onSaved();
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setMeterStep(null);
+    }
+  };
 
   const save = async () => {
     setBusy(true);
@@ -228,8 +256,45 @@ export function PhoneGlucose({ userId, g, tamil, onSaved }: { userId: string; g:
           <span className={`rounded-full px-2.5 py-0.5 text-[0.78rem] font-bold ${b.chip}`}>{tamil ? b.ta : b.label}</span>
         </div>
       )}
-      {g.latest && <p className="text-[0.78rem] text-slate">{tamil ? KIND[g.latest.kind].ta : KIND[g.latest.kind].label} · {when(g.latest.at)}</p>}
+      {g.latest && (
+        <p className="text-[0.78rem] text-slate">
+          {tamil ? KIND[g.latest.kind].ta : KIND[g.latest.kind].label} · {when(g.latest.at)}
+          {g.latest.source !== "demo" && (
+            <span className="font-semibold"> · {g.latest.source === "device" ? `📟 ${UI.meter_from[lang]}` : `⌨️ ${UI.meter_typed[lang]}`}</span>
+          )}
+        </p>
+      )}
       {note && <p className={`mt-2 rounded-2xl px-3 py-2 text-[0.85rem] leading-snug ${g.latest?.band === "low" ? "bg-alarm-pale" : g.latest?.band === "high" ? "bg-amber-pale" : "bg-stride-pale"}`}>{note}</p>}
+       {meterStep ? (
+        <div className="mt-3 rounded-2xl border-2 border-brand bg-brand-soft px-4 py-5 text-center">
+          <p className="text-[2rem]" aria-hidden>
+            {meterStep === "connect" ? "📶" : meterStep === "strip" ? "🧪" : meterStep === "blood" ? "🩸" : "⏳"}
+          </p>
+          <p className="mt-1 font-bold">
+            {meterStep === "connect"
+              ? UI.meter_connecting[lang]
+              : meterStep === "strip"
+                ? UI.meter_strip[lang]
+                : meterStep === "blood"
+                  ? UI.meter_blood[lang]
+                  : `${UI.meter_measuring[lang]} ${count}`}
+          </p>
+        </div>
+      ) : (
+        <>
+          <button type="button" onClick={checkWithMeter} className="brand-gradient mt-3 w-full rounded-2xl py-3 text-[1.05rem] font-extrabold text-white">
+            🩸 {UI.meter_check[lang]}
+          </button>
+          <label className="mt-1.5 flex items-center justify-center gap-1.5 text-[0.7rem] text-slate">
+            Simulated meter (demo) reads
+            <select value={demoValue} onChange={(e) => setDemoValue(Number(e.target.value))} className="rounded-md border border-rule bg-paper px-1 py-0.5">
+              <option value={58}>58 (low)</option>
+              <option value={112}>112 (in range)</option>
+              <option value={285}>285 (high)</option>
+            </select>
+          </label>
+        </>
+      )}
       <div className="mt-3 grid grid-cols-3 gap-1.5">
         {(Object.keys(KIND) as GlucoseKind[]).map((k) => (
           <button
